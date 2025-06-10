@@ -1,0 +1,1 @@
+pub fn generate_turn_report(state: &GameState) -> PdfDocument { ... }
