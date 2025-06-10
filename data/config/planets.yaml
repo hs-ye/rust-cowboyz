@@ -1,0 +1,50 @@
+# planets.yaml
+- id: earth
+  orbit_radius: 1.0
+  orbit_period: 12  # months
+  produces: [Foodstuffs, Water]
+  demands: [Metal Ores, Fuel]
+
+- id: mercury
+  orbit_radius: 0.5
+  orbit_period: 6  # months
+  produces: []
+  demands: [Fuel]
+
+- id: venus
+  orbit_radius: 1.2
+  orbit_period: 24  # months
+  produces: [Foodstuffs]
+  demands: [Metal Ores, Fuel]
+
+- id: mars
+  orbit_radius: 1.5
+  orbit_period: 12  # months
+  produces: [Foodstuffs, Metal Ores]
+  demands: [Fuel]
+
+- id: jupiter
+  orbit_radius: 4.0
+  orbit_period: 24  # months
+  produces: [Refined Alloys, Computer Parts]
+  demands: [Metal Ores, Fuel]
+
+- id: saturn
+  orbit_radius: 6.5
+  orbit_period: 12  # months
+  produces: [Foodstuffs, Refined Alloys]
+  demands: [Fuel, Metal Ores]
+
+- id: uranus
+  orbit_radius: 8.0
+  orbit_period: 24  # months
+  produces: [Computer Parts, Luxury Goods]
+  demands: [Metal Ores, Fuel]
+
+- id: neptune
+  orbit_radius: 9.5
+  orbit_period: 12  # months
+  produces: [Refined Alloys, Foodstuffs]
+  demands: [Fuel, Metal Ores]
+```
+
