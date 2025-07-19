@@ -8,7 +8,7 @@ The goal of the game is to make as much money as possible in a fixed number of t
 - Single Player: Local game only
 - Game data format: Use YAML for config & save files
 - Turn based: Player will input actions, game engine will process, and then wait for user to input next move
-- UI: Input will be command line, output / UI will be printed to a graphical PDF file
+- UI: initially command line - can add Web interface later 
 - Language: Written in Rust
 
 # Game Map / Solar System Setup
