@@ -1,13 +1,12 @@
-use std::collections::HashMap;
+// src/simulation/economy.rs
 
-pub fn update_market(planet: &mut Planet, events: &[Event]) { ... }
+pub fn update_market(_planet: &mut crate::simulation::orbits::Planet) { todo!() }
 
 #[derive(Debug, Clone)]
 pub struct Good {
     pub id: String,
     pub base_value: f64,
 }
-
 
 /// Holds the key supply/demand information about a particular good in a particular market.
 ///
@@ -26,5 +25,16 @@ pub struct MarketGood {
 
 #[derive(Debug, Clone)]
 pub struct PlanetEconomy {
-    pub market: HashMap<String, MarketGood>,
+    pub market: Vec<MarketGood>,
+}
+
+/// Filtering helpers for the `PlanetEconomy` struct, to extract produced and demanded goods
+impl PlanetEconomy {
+    pub fn produced_goods(&self) -> Vec<&MarketGood> {
+        self.market.iter().filter(|mg| mg.is_produced).collect()
+    }
+
+    pub fn demanded_goods(&self) -> Vec<&MarketGood> {
+        self.market.iter().filter(|mg| mg.is_demanded).collect()
+    }
 }

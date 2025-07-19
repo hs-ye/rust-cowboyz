@@ -1,40 +1,36 @@
 # List of goods to be traded in the game
----
-
 - name: Ice
-  - description: A vital resource for human life, mined from asteroids in space and used for water
-  - base_value: 5
+  description: A vital resource for human life, mined from asteroids in space and used for water
+  base_value: 5
 
 - name: Medicine
-  - description: A crucial item for maintaining health and survival in harsh environments. Used to treat various illnesses and injuries.
-  - base_value: 10
+  description: A crucial item for maintaining health and survival in harsh environments. Used to treat various illnesses and injuries.
+  base_value: 10
 
 - name: Foodstuffs
-  - description: Basic provisions that provide essential nutrients for survival. Includes items like rations, fruits, and other consumables.
-  - base_value: 15
+  description: Basic provisions that provide essential nutrients for survival. Includes items like rations, fruits, and other consumables.
+  base_value: 15
 
 - name: Weapons
-  - description: Items used for combat or defense, including firearms, melee weapons, and specialized equipment.
-  - base_value: 20
+  description: Items used for combat or defense, including firearms, melee weapons, and specialized equipment.
+  base_value: 20
 
 - name: Metal Ores
-  - description: Various ores of different metals, each with unique properties and uses. Examples include iron ore, copper ore, gold ore, etc.
-  - base_value: 25
+  description: Various ores of different metals, each with unique properties and uses. Examples include iron ore, copper ore, gold ore, etc.
+  base_value: 25
 
 - name: Refined Alloys
-  - description: Processed metal materials used in construction, manufacturing, and other industrial applications.
-  - base_value: 30
+  description: Processed metal materials used in construction, manufacturing, and other industrial applications.
+  base_value: 30
 
 - name: Computer Parts
-  - description: Components that make up computer systems, such as processors, memory modules, hard drives, etc.
-  - base_value: 35
+  description: Components that make up computer systems, such as processors, memory modules, hard drives, etc.
+  base_value: 35
 
 - name: Fuel
-   - description: Essential resource for powering machinery and generating heat in various environments. Refined from Water.
-  - base_value: 40
+  description: Essential resource for powering machinery and generating heat in various environments. Refined from Water.
+  base_value: 40
 
 - name: Luxury Goods
-  - description: High-end items that provide comfort and status, such as jewelry, designer clothing, and rare artifacts.
-  - base_value: 50
-
----
+  description: High-end items that provide comfort and status, such as jewelry, designer clothing, and rare artifacts.
+  base_value: 50

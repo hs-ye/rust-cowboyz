@@ -9,14 +9,17 @@ pub struct PlanetConfig {
     pub id: String,
     pub orbit_radius: f64,
     pub orbit_period: f64,
-    #[serde(default)]
-    pub economy: PlanetEconomy,  // Add this line to include the economy data
+    pub produces: Vec<String>,
+    pub demands: Vec<String>,
 }
 
-// Good configuration structure
-#[derive(Debug, Deserialize)]
+// Base commodity config in the game, used to hold base unmodified values
+// Some goods are more rarer/expensive than others
+// During setup, depending on plantConfig randomise the value for each economy::MarketGood
+#[derive(Debug, Deserialize, Clone)]
 pub struct GoodConfig {
-    pub id: String,
+    pub name: String,
+    pub description: String,
     pub base_value: f64,
 }
 

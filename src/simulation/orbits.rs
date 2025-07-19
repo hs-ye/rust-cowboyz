@@ -1,4 +1,6 @@
-#[derive(Debug, Clone)]
+use crate::simulation::economy;
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Position {
     pub x: f64,
     pub y: f64,
@@ -14,7 +16,7 @@ pub struct Planet {
 }
 
 /// Calculates planet position at given time
-pub fn calculate_position(radius: f64, period: f64, time: f64) -> Position {
+pub fn calculate_orbit_position(radius: f64, period: f64, time: f64) -> Position {
     // Simple circular orbit calculation
     let angle = 2.0 * std::f64::consts::PI * (time / period);
     Position {

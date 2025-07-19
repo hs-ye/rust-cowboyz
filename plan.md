@@ -8,7 +8,7 @@ The goal of the game is to make as much money as possible in a fixed number of t
 - Single Player: Local game only
 - Game data format: Use YAML for config & save files
 - Turn based: Player will input actions, game engine will process, and then wait for user to input next move
-- UI: initially command line - can add Web interface later 
+- UI: initially command line - can add GUI/Web interface later 
 - Language: Written in Rust
 
 # Game Map / Solar System Setup
@@ -46,3 +46,23 @@ Movement system: Player action is to move point to point between planets
 - There is a margin between buy/sell price of all goods, this also varies by planet and is randomly generated
 - Every Turn/Month that passes planets will randomly modify their supply/demand of different goods, which impacts the price.
 - There are also events which can impact the supply/demand of goods
+
+# Interface
+
+We will eventually want to build a graphical interface, but to get the game working / for debugging and testing we will start with a CLI 
+
+## CLI
+
+The CLI should have basic functionality:
+- Show a readout of key game state:
+	- Current time/turn, total turns in the game
+	- Planet Location
+	- player state: Cargo carried & Money
+	- Buy/Sell prices and cargo avaliable in current location
+	- Avaliable destinations & Travel Times
+	
+- Avaliable player actions:
+	- Buy/Sell goods
+	- Buy ship upgrades
+	- Travel to a different planet
+	- Skip time / Wait at current location

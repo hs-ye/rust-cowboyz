@@ -1,8 +1,6 @@
-
-// src/main.rs
-
+mod assets;
+mod simulation; // Added line for the simulation module
 mod setup;
-use std::collections::HashMap;
 
 fn main() {
     let mut world = setup::initialize_world(
@@ -13,7 +11,6 @@ fn main() {
     // Calculate initial planet positions
     world.initialize_positions();
     
-    // Now you have a fully initialized game world
+    // Now you has a fully initialized game world
     // Proceed with game loop...
-}
 }

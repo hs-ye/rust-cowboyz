@@ -1,148 +1,185 @@
-use crate::assets::config_loader;
-use crate::simulation::{economy, orbits, travel};
-use rand::{seq::SliceRandom, Rng};
-use std::collections::HashMap;
+// src/setup.rs
 
-/// Initializes the game world from configuration files
+use crate::assets::config_loader;
+use crate::simulation::{economy, orbits};
+
+/// Initializes the game world from configuration files.
+///
+/// This function orchestrates the loading of game data from configuration files,
+/// creates the initial game state, and sets the starting positions of the planets.
 pub fn initialize_world(
     goods_config_path: &str,
     planets_config_path: &str,
 ) -> World {
-    let goods: Vec<economy::goods> = load_goods(goods_config_path);
-    let planets: Vec<_> = load_planets(planets_config_path, &goods);
-    
-    World {
+    let goods = load_goods(goods_config_path);
+    let planets = load_planets(planets_config_path, &goods);
+
+    let mut world = World {
         goods,
         planets,
         current_time: 0.0, // Game starts at time 0
-    }
+    };
+
+    world.initialize_positions();
+    world
 }
 
-/// Loads goods from configuration
+/// Loads and maps goods from the configuration file.
 fn load_goods(path: &str) -> Vec<economy::Good> {
     config_loader::load_goods_config(path)
         .into_iter()
         .map(|config| economy::Good {
-            id: config.id,
+            id: config.name, // The `name` from config is the `id` in the game
             base_value: config.base_value,
         })
         .collect()
 }
 
-/// Loads planets with randomized economies
+/// Loads planets from configuration and initializes their economies.
 fn load_planets(path: &str, goods: &[economy::Good]) -> Vec<orbits::Planet> {
     let configs = config_loader::load_planets_config(path);
-    let mut rng = rand::thread_rng();
-    
+
     configs
         .into_iter()
         .map(|config| {
-            // Randomly assign produced and demanded goods
-            let (produced, demanded) = randomize_economy(&mut rng, goods);
-            
-            // Create market with initial prices
-            let market = initialize_market(goods, &produced, &demanded);
-            
+            // Use the produces and demands from the config file
+            let market = initialize_market(goods, &config.produces, &config.demands);
+
             orbits::Planet {
                 id: config.id,
                 orbit_radius: config.orbit_radius,
                 orbit_period: config.orbit_period,
-                position: orbits::Position { x: 0.0, y: 0.0 }, // Initial position calculated later
-                economy: economy::PlanetEconomy {
-                    produced_goods: produced,
-                    demanded_goods: demanded,
-                    market,
-                },
+                position: orbits::Position { x: 0.0, y: 0.0 }, // Initial position is calculated later
+                economy: economy::PlanetEconomy { market },
             }
         })
         .collect()
 }
 
-/// Randomizes which goods a planet produces and demands
-fn randomize_economy<R: Rng>(
-    rng: &mut R,
-    goods: &[economy::Good],
-) -> (Vec<String>, Vec<String>) {
-    let mut produced = Vec::new();
-    let mut demanded = Vec::new();
-    
-    // Ensure at least one produced and one demanded good
-    produced.push(goods.choose(rng).unwrap().id.clone());
-    demanded.push(
-        goods
-            .iter()
-            .find(|g| !produced.contains(&g.id))
-            .unwrap_or(&goods[0])
-            .id
-            .clone(),
-    );
-    
-    // Randomly add more goods (0-2 additional)
-    for _ in 0..rng.gen_range(0..3) {
-        if let Some(good) = goods.choose(rng) {
-            produced.push(good.id.clone());
-        }
-    }
-    
-    for _ in 0..rng.gen_range(0..3) {
-        if let Some(good) = goods.iter().find(|g| !produced.contains(&g.id)).and_then(|g| Some(g)) {
-            demanded.push(good.id.clone());
-        }
-    }
-    
-    (produced, demanded)
-}
-
-/// Initializes market prices based on production/demand
+/// Initializes a planet's market based on its production and demand.
 fn initialize_market(
     goods: &[economy::Good],
     produced: &[String],
     demanded: &[String],
-) -> HashMap<String, economy::MarketGood> {
+) -> Vec<economy::MarketGood> {
     goods
         .iter()
         .map(|good| {
             let base_price = good.base_value;
             let (buy_price, sell_price) = if produced.contains(&good.id) {
-                // Produced goods: low buy price, very low sell price
+                // Produced goods: Player sells to planet, so planet's buy price is low.
                 (base_price * 0.8, base_price * 0.6)
             } else if demanded.contains(&good.id) {
-                // Demanded goods: high buy price, very high sell price
+                // Demanded goods: Player buys from planet, so planet's sell price is high.
                 (base_price * 1.4, base_price * 1.6)
             } else {
                 // Neutral goods
                 (base_price, base_price * 1.2)
             };
-            
-            (
-                good.id.clone(),
-                economy::MarketGood {
-                    buy_price,
-                    sell_price,
-                    supply: 1.0, // Initial supply level
-                    demand: 1.0, // Initial demand level
-                },
-            )
+
+            economy::MarketGood {
+                good: good.clone(), // Clone the good prototype
+                buy_price,
+                sell_price,
+                supply: 1.0,
+                demand: 1.0,
+                is_produced: produced.contains(&good.id),
+                is_demanded: demanded.contains(&good.id),
+            }
         })
         .collect()
 }
 
-/// Represents the game world state
+/// Represents the complete state of the game world.
 pub struct World {
     pub goods: Vec<economy::Good>,
     pub planets: Vec<orbits::Planet>,
-    pub current_time: f64, // In-game time (months)
+    pub current_time: f64, // In-game time, measured in months
 }
 
 impl World {
-    /// Initializes planetary positions based on current time
+    /// Calculates and sets the initial orbital positions of all planets.
     pub fn initialize_positions(&mut self) {
         for planet in &mut self.planets {
-            planet.position = orbits::calculate_position(
+            planet.position = orbits::calculate_orbit_position(
                 planet.orbit_radius,
                 planet.orbit_period,
                 self.current_time,
             );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_initialize_world_from_config() {
+        // 1. Create a temporary directory for our config files
+        let dir = tempdir().expect("Failed to create temp dir");
+        let goods_path = dir.path().join("goods.yaml");
+        let planets_path = dir.path().join("planets.yaml");
+
+        // 2. Create and write mock config files
+        let mut goods_file = File::create(&goods_path).expect("Failed to create goods file");
+        goods_file.write_all(b"
+- name: Food
+  description: Basic sustenance
+  base_value: 10.0
+- name: Machinery
+  description: Industrial equipment
+  base_value: 100.0
+").expect("Failed to write goods file");
+
+        let mut planets_file = File::create(&planets_path).expect("Failed to create planets file");
+        planets_file.write_all(b"
+- id: test_earth
+  orbit_radius: 1.0
+  orbit_period: 12.0
+  produces: [Food]
+  demands: [Machinery]
+- id: test_mars
+  orbit_radius: 1.5
+  orbit_period: 24.0
+  produces: [Machinery]
+  demands: [Food]
+").expect("Failed to write planets file");
+
+        // 3. Call the function we are testing
+        let world = initialize_world(
+            goods_path.to_str().unwrap(),
+            planets_path.to_str().unwrap(),
+        );
+
+        // 4. Assert the world state is correct
+        assert_eq!(world.goods.len(), 2);
+        assert_eq!(world.planets.len(), 2);
+        assert_eq!(world.current_time, 0.0);
+
+        // 5. Assert specific planet data is correct
+        let earth = world.planets.iter().find(|p| p.id == "test_earth").expect("Planet 'test_earth' not found");
+        assert_eq!(earth.orbit_radius, 1.0);
+
+        let earth_food_market = earth.economy.market.iter().find(|mg| mg.good.id == "Food").unwrap();
+        assert!(earth_food_market.is_produced);
+        assert!(!earth_food_market.is_demanded);
+        // Check that produced goods have lower prices
+        assert!(earth_food_market.buy_price < earth_food_market.good.base_value);
+
+        let earth_machinery_market = earth.economy.market.iter().find(|mg| mg.good.id == "Machinery").unwrap();
+        assert!(!earth_machinery_market.is_produced);
+        assert!(earth_machinery_market.is_demanded);
+        // Check that demanded goods have higher prices
+        assert!(earth_machinery_market.sell_price > earth_machinery_market.good.base_value);
+
+        // 6. Assert that initial positions have been calculated
+        for planet in world.planets {
+            let expected_pos = orbits::calculate_orbit_position(planet.orbit_radius, planet.orbit_period, 0.0);
+            assert_eq!(planet.position, expected_pos);
         }
     }
 }
