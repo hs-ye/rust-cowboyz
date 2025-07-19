@@ -46,5 +46,3 @@
   orbit_period: 12  # months
   produces: [Refined Alloys, Foodstuffs]
   demands: [Fuel, Metal Ores]
-```
-

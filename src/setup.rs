@@ -19,6 +19,10 @@ pub fn initialize_world(
         planets,
         current_time: 0.0, // Game starts at time 0
         player: crate::player::Player::new(),
+        game_clock: crate::game_state::GameClock {
+            current_turn: 1,
+            total_turns: 100,
+        },
     };
 
     world.initialize_positions();
@@ -97,6 +101,7 @@ pub struct World {
     pub planets: Vec<orbits::Planet>,
     pub current_time: f64, // In-game time, measured in months
     pub player: crate::player::Player,
+    pub game_clock: crate::game_state::GameClock,
 }
 
 impl World {

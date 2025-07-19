@@ -1,5 +1,4 @@
-pub struct GameState {
-    current_turn: u32,
-    max_turns: u32,
-    // References to other systems
+pub struct GameClock {
+    pub current_turn: u32,
+    pub total_turns: u32,
 }
