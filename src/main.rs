@@ -1,6 +1,7 @@
 mod assets;
 mod simulation; // Added line for the simulation module
 mod setup;
+mod player;
 
 fn main() {
     let mut world = setup::initialize_world(

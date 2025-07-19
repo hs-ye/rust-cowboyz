@@ -20,7 +20,7 @@ pub struct PlanetConfig {
 pub struct GoodConfig {
     pub name: String,
     pub description: String,
-    pub base_value: f64,
+    pub base_value: u32,
 }
 
 /// Load planets configuration from YAML

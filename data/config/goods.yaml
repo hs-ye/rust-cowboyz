@@ -24,7 +24,7 @@
   base_value: 30
 
 - name: Computer Parts
-  description: Components that make up computer systems, such as processors, memory modules, hard drives, etc.
+  description: Components that make up computer systems, suchs as processors, memory modules, hard drives, etc.
   base_value: 35
 
 - name: Fuel

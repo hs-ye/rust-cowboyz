@@ -18,6 +18,7 @@ pub fn initialize_world(
         goods,
         planets,
         current_time: 0.0, // Game starts at time 0
+        player: crate::player::Player::new(),
     };
 
     world.initialize_positions();
@@ -68,13 +69,13 @@ fn initialize_market(
             let base_price = good.base_value;
             let (buy_price, sell_price) = if produced.contains(&good.id) {
                 // Produced goods: Player sells to planet, so planet's buy price is low.
-                (base_price * 0.8, base_price * 0.6)
+                ( (base_price as f64 * 0.8) as u32, (base_price as f64 * 0.6) as u32)
             } else if demanded.contains(&good.id) {
                 // Demanded goods: Player buys from planet, so planet's sell price is high.
-                (base_price * 1.4, base_price * 1.6)
+                ( (base_price as f64 * 1.4) as u32, (base_price as f64 * 1.6) as u32)
             } else {
                 // Neutral goods
-                (base_price, base_price * 1.2)
+                (base_price, (base_price as f64 * 1.2) as u32)
             };
 
             economy::MarketGood {
@@ -95,6 +96,7 @@ pub struct World {
     pub goods: Vec<economy::Good>,
     pub planets: Vec<orbits::Planet>,
     pub current_time: f64, // In-game time, measured in months
+    pub player: crate::player::Player,
 }
 
 impl World {
@@ -129,10 +131,10 @@ mod tests {
         goods_file.write_all(b"
 - name: Food
   description: Basic sustenance
-  base_value: 10.0
+  base_value: 10
 - name: Machinery
   description: Industrial equipment
-  base_value: 100.0
+  base_value: 100
 ").expect("Failed to write goods file");
 
         let mut planets_file = File::create(&planets_path).expect("Failed to create planets file");
@@ -168,13 +170,15 @@ mod tests {
         assert!(earth_food_market.is_produced);
         assert!(!earth_food_market.is_demanded);
         // Check that produced goods have lower prices
-        assert!(earth_food_market.buy_price < earth_food_market.good.base_value);
+        assert_eq!(earth_food_market.buy_price, 8);
+        assert_eq!(earth_food_market.sell_price, 6);
 
         let earth_machinery_market = earth.economy.market.iter().find(|mg| mg.good.id == "Machinery").unwrap();
         assert!(!earth_machinery_market.is_produced);
         assert!(earth_machinery_market.is_demanded);
         // Check that demanded goods have higher prices
-        assert!(earth_machinery_market.sell_price > earth_machinery_market.good.base_value);
+        assert_eq!(earth_machinery_market.buy_price, 140);
+        assert_eq!(earth_machinery_market.sell_price, 160);
 
         // 6. Assert that initial positions have been calculated
         for planet in world.planets {

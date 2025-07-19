@@ -2,10 +2,10 @@
 
 pub fn update_market(_planet: &mut crate::simulation::orbits::Planet) { todo!() }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd)]
 pub struct Good {
     pub id: String,
-    pub base_value: f64,
+    pub base_value: u32,
 }
 
 /// Holds the key supply/demand information about a particular good in a particular market.
@@ -15,8 +15,8 @@ pub struct Good {
 #[derive(Debug, Clone)]
 pub struct MarketGood {
     pub good: Good,         // The good this market entry represents
-    pub buy_price: f64,   
-    pub sell_price: f64,  
+    pub buy_price: u32,   
+    pub sell_price: u32,  
     pub supply: f64,      // Supply level (0.0-2.0)
     pub demand: f64,      // Demand level (0.0-2.0)
     pub is_produced: bool,  // Flag to indicate if this good is produced on the planet
