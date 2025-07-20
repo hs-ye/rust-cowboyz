@@ -8,6 +8,7 @@ pub mod ui;
 
 use clap::Parser;
 use ui::cli::{Cli, Commands};
+use std::io::{self, Write};
 
 fn main() {
     let mut world = setup::initialize_world(
@@ -18,26 +19,73 @@ fn main() {
     // Calculate initial planet positions
     world.initialize_positions();
     
-    let cli = Cli::parse();
+    println!("Welcome to Rust Cowboyz! Type your commands below.");
 
-    match &cli.command {
-        Commands::Status {} => {
-            ui::cli::display_game_status(&world);
-            ui::cli::display_player_status(&world);
-            ui::cli::display_market_status(&world);
-            ui::cli::display_travel_options(&world);
+    loop {
+        print!("> ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        let input = input.trim();
+
+        if input.is_empty() {
+            continue;
         }
-        Commands::Buy { good_id, quantity } => {
-            println!("Buy command: {} x {} (Not yet implemented)", good_id, quantity);
+
+        let mut args = vec!["rust-cowboyz".to_string()]; // Dummy program name
+        args.extend(shlex::split(input).unwrap_or_else(|| {
+            eprintln!("Error: Invalid input");
+            return Vec::new();
+        }));
+
+        if args.len() == 1 {
+            continue;
         }
-        Commands::Sell { good_id, quantity } => {
-            println!("Sell command: {} x {} (Not yet implemented)", good_id, quantity);
-        }
-        Commands::Travel { destination_planet_id } => {
-            println!("Travel command: {} (Not yet implemented)", destination_planet_id);
-        }
-        Commands::Wait { months } => {
-            println!("Wait command: {} months (Not yet implemented)", months);
+
+        let cli = match Cli::try_parse_from(args.iter()) {
+            Ok(cli) => cli,
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                continue;
+            }
+        };
+
+        match &cli.command {
+            Commands::Status {} => {
+                println!("{}", ui::cli::display_game_status(&world));
+                println!("{}", ui::cli::display_player_status(&world));
+                println!("{}", ui::cli::display_market_status(&world));
+                println!("{}", ui::cli::display_travel_options(&world));
+            }
+            Commands::Buy { good_id, quantity } => {
+                match player::actions::handle_buy(&mut world, good_id, *quantity) {
+                    Ok(message) => println!("{}", message),
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Commands::Sell { good_id, quantity } => {
+                match player::actions::handle_sell(&mut world, good_id, *quantity) {
+                    Ok(message) => println!("{}", message),
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Commands::Travel { destination_planet_id } => {
+                match player::actions::handle_travel(&mut world, destination_planet_id) {
+                    Ok(message) => println!("{}", message),
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Commands::Wait { months } => {
+                match player::actions::handle_wait(&mut world, *months) {
+                    Ok(message) => println!("{}", message),
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Commands::Quit => {
+                println!("Exiting game. Goodbye!");
+                break;
+            }
         }
     }
 }

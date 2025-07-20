@@ -1,6 +1,6 @@
 // src/simulation/economy.rs
 
-pub fn update_market(_planet: &mut crate::simulation::orbits::Planet) { todo!() }
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd)]
 pub struct Good {

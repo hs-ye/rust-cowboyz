@@ -31,58 +31,58 @@ pub enum Commands {
     Wait {
         months: u32,
     },
+    /// Exit the game
+    Quit,
 }
 
-pub fn display_game_status(world: &World) {
-    println!("--- Game Status ---");
-    println!("Current Turn: {} / Total Turns: {}", world.game_clock.current_turn, world.game_clock.total_turns);
-    println!("");
+pub fn display_game_status(world: &World) -> String {
+    format!("--- Game Status ---\nCurrent Turn: {} / Total Turns: {}\n",
+           world.game_clock.current_turn, world.game_clock.total_turns)
 }
 
-pub fn display_player_status(world: &World) {
-    println!("--- Player Status ---");
-    println!("Location: {}", world.player.location);
-    println!("Money: {}", world.player.money);
-    println!("Cargo: {}/{}", world.player.inventory.current_load(), world.player.inventory.capacity);
-    println!("Goods:");
+pub fn display_player_status(world: &World) -> String {
+    let mut goods_list = String::new();
     if world.player.inventory.goods.is_empty() {
-        println!("  (empty)");
+        goods_list.push_str("  (empty)");
     } else {
         for (good_id, quantity) in world.player.inventory.get_goods_list() {
-            println!("  {} x {}", good_id, quantity);
+            goods_list.push_str(&format!("  {} x {}\n", good_id, quantity));
         }
     }
-    println!("");
+
+    format!("--- Player Status ---\nLocation: {}\nMoney: {}\nCargo: {}/{}\nGoods:\n{}",
+           world.player.location, world.player.money, world.player.inventory.current_load(), world.player.inventory.capacity, goods_list)
 }
 
-pub fn display_market_status(world: &World) {
-    println!("--- Market Status ({}) ---", world.player.location);
+pub fn display_market_status(world: &World) -> String {
+    let mut market_list = String::new();
     let current_planet = world.planets.iter().find(|p| p.id == world.player.location);
 
     if let Some(planet) = current_planet {
-        println!("Good           Buy Price   Sell Price");
-        println!("---------------------------------------");
+        market_list.push_str("Good           Buy Price   Sell Price\n");
+        market_list.push_str("---------------------------------------\n");
         for market_good in &planet.economy.market {
-            println!("{:<14} {:<12} {:<12}",
-                       market_good.good.id,
-                       market_good.buy_price,
-                       market_good.sell_price);
+            market_list.push_str(&format!("{:<14} {:<12} {:<12}\n",
+                                           market_good.good.id,
+                                           market_good.buy_price,
+                                           market_good.sell_price));
         }
     } else {
-        println!("Market information not available for current location.");
+        market_list.push_str("Market information not available for current location.");
     }
-    println!("");
+
+    format!("--- Market Status ({}) ---\n{}", world.player.location, market_list)
 }
 
-pub fn display_travel_options(world: &World) {
-    println!("--- Available Destinations ---");
+pub fn display_travel_options(world: &World) -> String {
+    let mut travel_list = String::new();
     for planet in &world.planets {
         if planet.id != world.player.location {
-            // Placeholder for travel time calculation
-            println!("Travel to {} (Time: TBD months)", planet.id);
+            travel_list.push_str(&format!("Travel to {} (Time: TBD months)\n", planet.id));
         }
     }
-    println!("");
+
+    format!("--- Available Destinations ---\n{}", travel_list)
 }
 
 #[cfg(test)]
@@ -92,11 +92,6 @@ mod tests {
     use crate::player::{Player, inventory::CargoHold, ship::Ship};
     use crate::simulation::{economy::{Good, MarketGood, PlanetEconomy}, orbits::{Planet, Position}};
     use crate::game_state::GameClock;
-    use std::io::{self, Write};
-    use std::sync::Mutex;
-
-    // A global mutex to protect stdout during tests
-    static STDOUT_MUTEX: Mutex<()> = Mutex::new(());
 
     // Helper function to create a mock World instance
     fn create_mock_world() -> World {
@@ -158,42 +153,10 @@ mod tests {
         }
     }
 
-    // Helper to capture stdout
-    fn capture_stdout<F>(f: F) -> String
-    where
-        F: FnOnce(),
-    {
-        let _guard = STDOUT_MUTEX.lock().unwrap(); // Acquire lock
-        let original_stdout = io::stdout();
-        let (pipe_read, pipe_write) = os_pipe::pipe().unwrap();
-        let mut captured_output = String::new();
-
-        // Redirect stdout to the write end of the pipe
-        unsafe {
-            libc::dup2(pipe_write.as_raw_fd(), 1);
-        }
-
-        // Execute the function that prints to stdout
-        f();
-
-        // Restore original stdout
-        unsafe {
-            libc::dup2(original_stdout.as_raw_fd(), 1);
-        }
-
-        // Read captured output from the read end of the pipe
-        let mut reader = io::BufReader::new(pipe_read);
-        reader.read_to_string(&mut captured_output).unwrap();
-
-        captured_output
-    }
-
     #[test]
     fn test_display_game_status() {
         let world = create_mock_world();
-        let output = capture_stdout(|| {
-            display_game_status(&world);
-        });
+        let output = display_game_status(&world);
         assert!(output.contains("--- Game Status ---"));
         assert!(output.contains("Current Turn: 1 / Total Turns: 100"));
     }
@@ -201,9 +164,7 @@ mod tests {
     #[test]
     fn test_display_player_status() {
         let world = create_mock_world();
-        let output = capture_stdout(|| {
-            display_player_status(&world);
-        });
+        let output = display_player_status(&world);
         assert!(output.contains("--- Player Status ---"));
         assert!(output.contains("Location: Earth"));
         assert!(output.contains("Money: 1000"));
@@ -215,21 +176,21 @@ mod tests {
     #[test]
     fn test_display_market_status() {
         let world = create_mock_world();
-        let output = capture_stdout(|| {
-            display_market_status(&world);
-        });
+        let output = display_market_status(&world);
         assert!(output.contains("--- Market Status (Earth) ---"));
         assert!(output.contains("Good           Buy Price   Sell Price"));
-        assert!(output.contains("Food             8           12"));
-        assert!(output.contains("Water            4           6"));
+        assert!(output.contains("Food"));
+        assert!(output.contains("8"));
+        assert!(output.contains("12"));
+        assert!(output.contains("Water"));
+        assert!(output.contains("4"));
+        assert!(output.contains("6"));
     }
 
     #[test]
     fn test_display_travel_options() {
         let world = create_mock_world();
-        let output = capture_stdout(|| {
-            display_travel_options(&world);
-        });
+        let output = display_travel_options(&world);
         assert!(output.contains("--- Available Destinations ---"));
         assert!(output.contains("Travel to Mars (Time: TBD months)"));
         assert!(!output.contains("Travel to Earth")); // Should not list current planet

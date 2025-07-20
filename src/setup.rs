@@ -135,10 +135,8 @@ mod tests {
         let mut goods_file = File::create(&goods_path).expect("Failed to create goods file");
         goods_file.write_all(b"
 - name: Food
-  description: Basic sustenance
   base_value: 10
 - name: Machinery
-  description: Industrial equipment
   base_value: 100
 ").expect("Failed to write goods file");
 

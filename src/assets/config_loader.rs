@@ -19,7 +19,6 @@ pub struct PlanetConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct GoodConfig {
     pub name: String,
-    pub description: String,
     pub base_value: u32,
 }
 
