@@ -8,6 +8,7 @@ The goal of the game is to make as much money as possible in a fixed number of t
 - Single Player: Local game only
 - Game data format: Use YAML for config & save files
 - Turn based: Player will input actions, game engine will process, and then wait for user to input next move
+- Simplified Simulation: The game aims to give the player some immersion and gameplay mechanics related to exploiting orbital mechanics, the actual implementation of orbital mechanics should be simplified so that it fits into a turn-based game
 - UI: initially command line - can add GUI/Web interface later 
 - Language: Written in Rust
 
@@ -20,15 +21,15 @@ The goal of the game is to make as much money as possible in a fixed number of t
 - Player can go from a single planet, to another planet Location. 
 	- Player has a constant travel speed, but needs to take into account orbit speed of target planet
 	- Time taken is based on the distance and speeds of orbit
-- Define calcs from current plane to each other planet
+- Define calcs from current planet to each other planet
+- Take simplifications as appropriate for a turn based game
 
 # Movement system
 
 Movement system: Player action is to move point to point between planets
 - Calculation of the travel time depends on the relative position and speeds of rotation of planets in orbit around the sun  
 - Assume Ship travel speed is constant, but taking into account the movement of planets. 
-- Game should calculate the fastest way between either travelling in the direction of orbit of all planets, or in reverse orbit direction to meet the target as it revolves around the sun. Player should only be given the fastest of the options.
-
+- Where appropriate, Game should calculate multiple ways to reach the target planet / destination and present the player the fastest possible option
 
 # Trading System
 
