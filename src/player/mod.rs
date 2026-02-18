@@ -15,8 +15,8 @@ impl Player {
         Player {
             money: 1000, // Starting money
             location: "earth".to_string(), // Starting planet
-            ship: ship::Ship::new(10.0, 100), // Default ship speed and cargo capacity
-            inventory: inventory::CargoHold::new(100), // Default cargo hold capacity
+            ship: ship::Ship::new(10.0, 10), // Default ship speed and cargo capacity (MVP specifies 10 units)
+            inventory: inventory::CargoHold::new(10), // Default cargo hold capacity (MVP specifies 10 units)
         }
     }
 }

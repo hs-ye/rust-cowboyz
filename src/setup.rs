@@ -21,7 +21,7 @@ pub fn initialize_world(
         player: crate::player::Player::new(),
         game_clock: crate::game_state::GameClock {
             current_turn: 1,
-            total_turns: 100,
+            total_turns: 10,
         },
     };
 

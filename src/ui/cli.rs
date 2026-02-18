@@ -31,6 +31,10 @@ pub enum Commands {
     Wait {
         months: u32,
     },
+    /// Show information about a specific planet
+    PlanetInfo {
+        planet_id: String,
+    },
     /// Exit the game
     Quit,
 }
@@ -76,13 +80,38 @@ pub fn display_market_status(world: &World) -> String {
 
 pub fn display_travel_options(world: &World) -> String {
     let mut travel_list = String::new();
+    
+    let current_planet = world.planets.iter()
+        .find(|p| p.id == world.player.location)
+        .expect("Player is not at a valid planet");
+        
     for planet in &world.planets {
         if planet.id != world.player.location {
-            travel_list.push_str(&format!("Travel to {} (Time: TBD months)\n", planet.id));
+            let travel_time = crate::simulation::travel::calculate_travel_time(current_planet, planet, world.player.ship.speed);
+            travel_list.push_str(&format!("Travel to {} (Time: {} months)\n", planet.id, travel_time));
         }
     }
 
     format!("--- Available Destinations ---\n{}", travel_list)
+}
+
+pub fn display_planet_info(world: &World, planet_id: &str) -> String {
+    let planet = world.planets.iter()
+        .find(|p| p.id == planet_id)
+        .ok_or_else(|| format!("Planet '{}' not found", planet_id))
+        .expect("Planet not found");
+
+    let mut market_list = String::new();
+    market_list.push_str("Good           Buy Price   Sell Price\n");
+    market_list.push_str("---------------------------------------\n");
+    for market_good in &planet.economy.market {
+        market_list.push_str(&format!("{:<14} {:<12} {:<12}\n",
+                                       market_good.good.id,
+                                       market_good.buy_price,
+                                       market_good.sell_price));
+    }
+
+    format!("--- Market Status ({}) ---\n{}", planet.id, market_list)
 }
 
 #[cfg(test)]
@@ -192,7 +221,7 @@ mod tests {
         let world = create_mock_world();
         let output = display_travel_options(&world);
         assert!(output.contains("--- Available Destinations ---"));
-        assert!(output.contains("Travel to Mars (Time: TBD months)"));
+        assert!(output.contains("Travel to Mars (Time: "));
         assert!(!output.contains("Travel to Earth")); // Should not list current planet
     }
 

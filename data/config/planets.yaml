@@ -2,7 +2,7 @@
 - id: earth
   orbit_radius: 1.0
   orbit_period: 12  # months
-  produces: [Foodstuffs, Water]
+  produces: [Foodstuffs, Ice]
   demands: [Metal Ores, Fuel]
 
 - id: mercury

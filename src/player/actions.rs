@@ -106,14 +106,17 @@ pub fn handle_wait(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         setup::World,
         player::{inventory::CargoHold, Player, ship::Ship},
-        simulation::economy::{Good, MarketGood, PlanetEconomy},
+        simulation::economy::{Good, MarketGood, PlanetEconomy}, 
         simulation::orbits::{Planet, Position},
         simulation::travel::calculate_travel_time,
         game_state::GameClock,
     };
+
+    // Note: Some imports are only used in tests and might appear unused in non-test builds
 
     fn create_mock_world() -> World {
         let good_food = Good { id: "food".to_string(), base_value: 10 };
