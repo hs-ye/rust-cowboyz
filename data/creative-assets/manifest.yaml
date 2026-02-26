@@ -1,0 +1,122 @@
+# Creative Asset Manifest
+# Simple tracking for indie studio - sprites, audio, video only
+# Status: pending → assigned → wip → review → complete
+
+assets:
+  # SPRITES & GRAPHICS
+  sprite_player_character_idle:
+    type: "sprite"
+    category: "character"
+    name: "Player Character - Idle Sprite"
+    status: "pending"
+    priority: "critical"
+    narrative_source: "data/narrative/characters/player.yaml"
+    requirements:
+      style: "2D pixel art or hand-drawn character sprite"
+      technical:
+        format: "PNG with transparency"
+        dimensions: "64x64 pixels"
+        states_needed: ["idle", "walk_left", "walk_right", "attack"]
+      visual_reference: "Hero character, determined expression, practical adventurer gear"
+    notes: "Main player character - needs to be clear and readable at small size"
+
+  sprite_town_background:
+    type: "background"
+    category: "environment"
+    name: "Starting Town - Background"
+    status: "pending"
+    priority: "high"
+    narrative_source: "data/lore/locations/starting_town.yaml"
+    requirements:
+      style: "2D illustrated background, cozy small town aesthetic"
+      technical:
+        format: "PNG or SVG"
+        dimensions: "1920x1080 (or scalable)"
+      mood: "Welcoming, peaceful, hints of adventure ahead"
+    notes: "First location players see - sets the tone for the game"
+
+  ui_health_bar:
+    type: "ui"
+    category: "interface"
+    name: "Health Bar UI Element"
+    status: "pending"
+    priority: "high"
+    requirements:
+      style: "Matches game's visual aesthetic"
+      technical:
+        format: "PNG with transparency or SVG"
+        dimensions: "Variable - should tile or scale"
+      usage: "Displays player health in top HUD"
+    notes: "Should be clear and easy to read during gameplay"
+
+  # AUDIO ASSETS
+  music_main_theme:
+    type: "music"
+    category: "theme"
+    name: "Main Theme Music"
+    status: "pending"
+    priority: "high"
+    requirements:
+      mood: "Epic but approachable, sense of adventure and wonder"
+      technical:
+        format: "MP3 or OGG"
+        length: "Loopable 1-2 minute track"
+      instrumentation: "Orchestral elements with memorable melody"
+    notes: "Plays on title screen and in safe areas - most important music track"
+
+  music_battle:
+    type: "music"
+    category: "combat"
+    name: "Battle Music"
+    status: "pending"
+    priority: "high"
+    requirements:
+      mood: "Energetic, tense, driving rhythm"
+      technical:
+        format: "MP3 or OGG"
+        length: "Loopable 1-2 minute track"
+      instrumentation: "Percussion-heavy, fast tempo"
+    notes: "Plays during combat encounters"
+
+  sfx_sword_swing:
+    type: "sfx"
+    category: "combat"
+    name: "Sword Swing Sound Effect"
+    status: "pending"
+    priority: "medium"
+    requirements:
+      style: "Sharp, impactful whoosh sound"
+      technical:
+        format: "WAV or MP3"
+        length: "Short (under 1 second)"
+    notes: "Used for player attack actions"
+
+  sfx_ui_click:
+    type: "sfx"
+    category: "ui"
+    name: "UI Button Click"
+    status: "pending"
+    priority: "low"
+    requirements:
+      style: "Subtle, satisfying click or tap"
+      technical:
+        format: "WAV or MP3"
+        length: "Very short (under 0.5 seconds)"
+    notes: "Used for all menu/button interactions"
+
+  # VIDEO ASSETS (if any)
+  # video_intro_cutscene:
+  #   type: "video"
+  #   category: "cutscene"
+  #   name: "Intro Cutscene"
+  #   status: "pending"
+  #   priority: "medium"
+  #   narrative_source: "data/narrative/stories/intro.yaml"
+  #   requirements:
+  #     content: "Brief introduction to game world"
+  #     technical:
+  #       format: "MP4 or WebM"
+  #       resolution: "1080p"
+  #       length: "30-60 seconds"
+  #     style: "Animated, matches game aesthetic"
+  #   notes: "Optional - can be replaced with still images + text if needed"
