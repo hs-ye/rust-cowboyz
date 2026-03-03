@@ -1,36 +1,41 @@
 # List of goods to be traded in the game
-- name: Ice
-  description: A vital resource for human life, mined from asteroids in space and used for water
-  base_value: 5
-
-- name: Medicine
-  description: A crucial item for maintaining health and survival in harsh environments. Used to treat various illnesses and injuries.
+# Based on ADR 0005: Market/Economy System for Space-Western Trading Game
+- name: Water
+  description: Essential for survival, low value but high demand on dry worlds
   base_value: 10
 
 - name: Foodstuffs
-  description: Basic provisions that provide essential nutrients for survival. Includes items like rations, fruits, and other consumables.
-  base_value: 15
-
-- name: Weapons
-  description: Items used for combat or defense, including firearms, melee weapons, and specialized equipment.
+  description: Combination of grain, meat, and spices - staple nutrition sources
   base_value: 20
 
-- name: Metal Ores
-  description: Various ores of different metals, each with unique properties and uses. Examples include iron ore, copper ore, gold ore, etc.
-  base_value: 25
+- name: Medicine
+  description: Medical supplies, high value, essential for health
+  base_value: 100
 
-- name: Refined Alloys
-  description: Processed metal materials used in construction, manufacturing, and other industrial applications.
-  base_value: 30
+- name: Firearms
+  description: Weapons for protection/offense, high value on dangerous worlds
+  base_value: 150
 
-- name: Computer Parts
-  description: Components that make up computer systems, suchs as processors, memory modules, hard drives, etc.
-  base_value: 35
-
-- name: Fuel
-  description: Essential resource for powering machinery and generating heat in various environments. Refined from Water.
-  base_value: 40
-
-- name: Luxury Goods
-  description: High-end items that provide comfort and status, such as jewelry, designer clothing, and rare artifacts.
+- name: Ammunition
+  description: Weapon accessories, consumed regularly, moderate value
   base_value: 50
+
+- name: Metals
+  description: Raw materials for construction and manufacturing
+  base_value: 60
+
+- name: Antimatter
+  description: Advanced raw material for energy production, high value
+  base_value: 300
+
+- name: Electronics
+  description: High-tech components, essential for advanced civilizations
+  base_value: 120
+
+- name: Narcotics
+  description: Illegal substances, high value but risky to trade
+  base_value: 400
+
+- name: Alien Artefacts
+  description: Rare and mysterious items from ancient civilizations, extremely high value and risky to trade
+  base_value: 800

@@ -139,26 +139,26 @@ mod tests {
         assert_eq!(world.game_clock.current_turn, 1);
         assert_eq!(world.game_clock.total_turns, 10);
         
-        // Test buying goods
+        // Test buying commodities
         let initial_money = world.player.money;
-        let result = player::actions::handle_buy(&mut world, "Ice", 2);
+        let result = player::actions::handle_buy(&mut world, "Water", 2);
         assert!(result.is_ok());
         // Player should have spent money
         assert!(world.player.money < initial_money);
-        // Player should have 2 units of Ice in cargo
-        assert_eq!(world.player.inventory.goods.get("Ice").unwrap(), &2);
-        
-        // Test selling goods
+        // Player should have 2 units of Water in cargo
+        assert_eq!(world.player.inventory.get_commodity_quantity(&simulation::commodity::CommodityType::Water), 2);
+
+        // Test selling commodities
         let money_before_sell = world.player.money;
-        let result = player::actions::handle_sell(&mut world, "Ice", 1);
+        let result = player::actions::handle_sell(&mut world, "Water", 1);
         assert!(result.is_ok());
         // Player should have more money after selling
         assert!(world.player.money > money_before_sell);
-        // Player should have 1 unit of Ice left in cargo
-        assert_eq!(world.player.inventory.goods.get("Ice").unwrap(), &1);
+        // Player should have 1 unit of Water left in cargo
+        assert_eq!(world.player.inventory.get_commodity_quantity(&simulation::commodity::CommodityType::Water), 1);
         
         // Test travel
-        let initial_location = world.player.location.clone();
+        let _initial_location = world.player.location.clone();
         let result = player::actions::handle_travel(&mut world, "mars");
         assert!(result.is_ok());
         // Player should now be on Mars
