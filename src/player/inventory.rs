@@ -1,45 +1,51 @@
-use std::collections::HashMap;
+use crate::simulation::commodity::{CommodityType, CommodityInventory};
 
 #[derive(Debug)]
 pub struct CargoHold {
     pub capacity: u32,
-    pub goods: HashMap<String, u32>, // Store goods by their ID (String) and quantity (u32)
+    pub commodities: CommodityInventory, // Using the new CommodityInventory system
 }
 
 impl CargoHold {
     pub fn new(capacity: u32) -> Self {
         CargoHold {
             capacity,
-            goods: HashMap::new(),
+            commodities: CommodityInventory::new(capacity),
         }
     }
 
-    pub fn add_good(&mut self, good_id: String, quantity: u32) -> Result<(), String> {
-        let current_load: u32 = self.goods.values().sum();
-        if current_load + quantity > self.capacity {
-            return Err(format!("Not enough cargo space. Available: {}", self.capacity - current_load));
+    pub fn add_commodity(&mut self, commodity_type: CommodityType, quantity: u32) -> Result<(), String> {
+        match self.commodities.add_commodity(commodity_type, quantity) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(e.to_string()),
         }
-        *self.goods.entry(good_id).or_insert(0) += quantity;
-        Ok(())
     }
 
-    pub fn remove_good(&mut self, good_id: String, quantity: u32) -> Result<(), String> {
-        let current_quantity = *self.goods.get(&good_id).unwrap_or(&0);
-        if current_quantity < quantity {
-            return Err(format!("Not enough {} in cargo. Available: {}", good_id, current_quantity));
+    pub fn remove_commodity(&mut self, commodity_type: CommodityType, quantity: u32) -> Result<(), String> {
+        match self.commodities.remove_commodity(&commodity_type, quantity) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.to_string()),
         }
-        *self.goods.entry(good_id.clone()).or_insert(0) -= quantity;
-        if *self.goods.get(&good_id).unwrap() == 0 {
-            self.goods.remove(&good_id);
-        }
-        Ok(())
     }
 
-    pub fn get_goods_list(&self) -> Vec<(&String, &u32)> {
-        self.goods.iter().collect()
+    pub fn get_commodities_list(&self) -> Vec<(&CommodityType, &u32)> {
+        // Convert HashMap<CommodityType, u32> to Vec<(&CommodityType, &u32)>
+        self.commodities.commodities.iter().collect()
     }
 
     pub fn current_load(&self) -> u32 {
-        self.goods.values().sum()
+        self.commodities.total_cargo_space_used()
+    }
+
+    pub fn remaining_capacity(&self) -> u32 {
+        self.commodities.remaining_cargo_space()
+    }
+
+    pub fn has_commodity(&self, commodity_type: &CommodityType) -> bool {
+        self.commodities.contains(commodity_type)
+    }
+
+    pub fn get_commodity_quantity(&self, commodity_type: &CommodityType) -> u32 {
+        self.commodities.get_quantity(commodity_type)
     }
 }

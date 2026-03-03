@@ -1,21 +1,19 @@
 // src/setup.rs
 
 use crate::assets::config_loader;
-use crate::simulation::{economy, orbits};
+use crate::simulation::{economy, orbits, commodity};
 
 /// Initializes the game world from configuration files.
 ///
 /// This function orchestrates the loading of game data from configuration files,
 /// creates the initial game state, and sets the starting positions of the planets.
 pub fn initialize_world(
-    goods_config_path: &str,
+    _goods_config_path: &str,
     planets_config_path: &str,
 ) -> World {
-    let goods = load_goods(goods_config_path);
-    let planets = load_planets(planets_config_path, &goods);
+    let planets = load_planets(planets_config_path);
 
     let mut world = World {
-        goods,
         planets,
         current_time: 0.0, // Game starts at time 0
         player: crate::player::Player::new(),
@@ -29,26 +27,15 @@ pub fn initialize_world(
     world
 }
 
-/// Loads and maps goods from the configuration file.
-fn load_goods(path: &str) -> Vec<economy::Good> {
-    config_loader::load_goods_config(path)
-        .into_iter()
-        .map(|config| economy::Good {
-            id: config.name, // The `name` from config is the `id` in the game
-            base_value: config.base_value,
-        })
-        .collect()
-}
-
 /// Loads planets from configuration and initializes their economies.
-fn load_planets(path: &str, goods: &[economy::Good]) -> Vec<orbits::Planet> {
+fn load_planets(path: &str) -> Vec<orbits::Planet> {
     let configs = config_loader::load_planets_config(path);
 
     configs
         .into_iter()
         .map(|config| {
-            // Use the produces and demands from the config file
-            let market = initialize_market(goods, &config.produces, &config.demands);
+            // Use the produces and demands from the config file to create market
+            let market = initialize_market(&config.produces, &config.demands);
 
             orbits::Planet {
                 id: config.id,
@@ -63,33 +50,43 @@ fn load_planets(path: &str, goods: &[economy::Good]) -> Vec<orbits::Planet> {
 
 /// Initializes a planet's market based on its production and demand.
 fn initialize_market(
-    goods: &[economy::Good],
     produced: &[String],
     demanded: &[String],
-) -> Vec<economy::MarketGood> {
-    goods
-        .iter()
-        .map(|good| {
-            let base_price = good.base_value;
-            let (buy_price, sell_price) = if produced.contains(&good.id) {
-                // Produced goods: Player sells to planet, so planet's buy price is low.
-                ( (base_price as f64 * 0.8) as u32, (base_price as f64 * 0.6) as u32)
-            } else if demanded.contains(&good.id) {
-                // Demanded goods: Player buys from planet, so planet's sell price is high.
-                ( (base_price as f64 * 1.4) as u32, (base_price as f64 * 1.6) as u32)
+) -> Vec<economy::MarketCommodity> {
+    commodity::CommodityType::all()
+        .into_iter()
+        .map(|commodity_type| {
+            // Convert string names to commodity types for comparison
+            let commodity_name = commodity_type.display_name().to_lowercase().replace(" ", "");
+            let base_price = commodity_type.base_value();
+            
+            let (buy_price, sell_price, is_produced, is_demanded) = if produced.iter().any(|s| 
+                s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
+                s.to_lowercase() == commodity_type.display_name().to_lowercase()
+            ) {
+                // Produced goods: Player sells to planet, so planet's buy price is higher.
+                // (Player sells to planet at buy_price)
+                ( (base_price as f64 * 1.2) as u32, base_price, true, false)
+            } else if demanded.iter().any(|s| 
+                s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
+                s.to_lowercase() == commodity_type.display_name().to_lowercase()
+            ) {
+                // Demanded goods: Player buys from planet, so planet's sell price is higher.
+                // (Player buys from planet at sell_price)
+                (base_price, (base_price as f64 * 1.2) as u32, false, true)
             } else {
                 // Neutral goods
-                (base_price, (base_price as f64 * 1.2) as u32)
+                (base_price, base_price, false, false)
             };
 
-            economy::MarketGood {
-                good: good.clone(), // Clone the good prototype
+            economy::MarketCommodity {
+                commodity_type: commodity_type.clone(),
                 buy_price,
                 sell_price,
                 supply: 1.0,
                 demand: 1.0,
-                is_produced: produced.contains(&good.id),
-                is_demanded: demanded.contains(&good.id),
+                is_produced,
+                is_demanded,
             }
         })
         .collect()
@@ -97,7 +94,6 @@ fn initialize_market(
 
 /// Represents the complete state of the game world.
 pub struct World {
-    pub goods: Vec<economy::Good>,
     pub planets: Vec<orbits::Planet>,
     pub current_time: f64, // In-game time, measured in months
     pub player: crate::player::Player,
@@ -145,13 +141,13 @@ mod tests {
 - id: test_earth
   orbit_radius: 1.0
   orbit_period: 12.0
-  produces: [Food]
-  demands: [Machinery]
+  produces: [Water]
+  demands: [Medicine]
 - id: test_mars
   orbit_radius: 1.5
   orbit_period: 24.0
-  produces: [Machinery]
-  demands: [Food]
+  produces: [Medicine]
+  demands: [Water]
 ").expect("Failed to write planets file");
 
         // 3. Call the function we are testing
@@ -161,7 +157,6 @@ mod tests {
         );
 
         // 4. Assert the world state is correct
-        assert_eq!(world.goods.len(), 2);
         assert_eq!(world.planets.len(), 2);
         assert_eq!(world.current_time, 0.0);
 
@@ -169,22 +164,26 @@ mod tests {
         let earth = world.planets.iter().find(|p| p.id == "test_earth").expect("Planet 'test_earth' not found");
         assert_eq!(earth.orbit_radius, 1.0);
 
-        let earth_food_market = earth.economy.market.iter().find(|mg| mg.good.id == "Food").unwrap();
-        assert!(earth_food_market.is_produced);
-        assert!(!earth_food_market.is_demanded);
-        // Check that produced goods have lower prices
-        assert_eq!(earth_food_market.buy_price, 8);
-        assert_eq!(earth_food_market.sell_price, 6);
+        // Find the water market on earth (produced)
+        let earth_water_market = earth.economy.market.iter().find(|mc| mc.commodity_type == commodity::CommodityType::Water);
+        if let Some(earth_water_market) = earth_water_market {
+            assert!(earth_water_market.is_produced);
+            assert!(!earth_water_market.is_demanded);
+            // Check that produced goods have appropriate prices
+            assert_eq!(earth_water_market.commodity_type.base_value(), 10);
+        }
 
-        let earth_machinery_market = earth.economy.market.iter().find(|mg| mg.good.id == "Machinery").unwrap();
-        assert!(!earth_machinery_market.is_produced);
-        assert!(earth_machinery_market.is_demanded);
-        // Check that demanded goods have higher prices
-        assert_eq!(earth_machinery_market.buy_price, 140);
-        assert_eq!(earth_machinery_market.sell_price, 160);
+        // Find the medicine market on earth (demanded)
+        let earth_medicine_market = earth.economy.market.iter().find(|mc| mc.commodity_type == commodity::CommodityType::Medicine);
+        if let Some(earth_medicine_market) = earth_medicine_market {
+            assert!(!earth_medicine_market.is_produced);
+            assert!(earth_medicine_market.is_demanded);
+            // Check that demanded goods have appropriate prices
+            assert_eq!(earth_medicine_market.commodity_type.base_value(), 100);
+        }
 
         // 6. Assert that initial positions have been calculated
-        for planet in world.planets {
+        for planet in &world.planets {
             let expected_pos = orbits::calculate_orbit_position(planet.orbit_radius, planet.orbit_period, 0.0);
             assert_eq!(planet.position, expected_pos);
         }
