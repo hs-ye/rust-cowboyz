@@ -20,3 +20,12 @@ QA-tester:
 - The Tech lead is also responsible for reviewing tickets tagged with the 'tech-lead-review' label, and then decide whether to escalate to the user, or
   refining the ticket and passing it back to the software engineer. The TL should review the comments on the commit by the user and make updates to either the ticket or a commit in the code where appropriate.
 - Tech lead
+
+
+---
+
+Ok next I want you to create two more ADRs before we are ready to move to development:
+ADR 0003: using the Game-Designer subagent on creating the web UI view:
+- the main screen will be a map of the solar system, showing all the planets in their actual position around the solar system for the given turn. This should be prominent given the main strategic choice of the game is around choosing which planet to travel to. There should also be info panels around the side (can be to the right of the screen) which gives status report on player/ship/inventory/market/planet details. Importantly, the details of other planets (including goods and market info) must also be visible to the user, as this is what the user will use to make their decisions on where to travel. Initially this can just be a single page app - we can add a configuration pop-up modal for configuring the game/starting a new game etc.
+
+ADR 0004: Tech stack using the software-architect subagent: based on the current requirements given, use the most appropriate rust-based tech stack to create this game. The only decision I am making here is we use leptos for the UI framework as we want to experiment with this modern approach (do NOT use Yew).

@@ -11,6 +11,8 @@ pub struct PlanetConfig {
     pub orbit_period: f64,
     pub produces: Vec<String>,
     pub demands: Vec<String>,
+    #[serde(default)] // This allows the field to be missing without causing an error
+    pub ignores: Vec<String>,
 }
 
 // Base commodity config in the game, used to hold base unmodified values

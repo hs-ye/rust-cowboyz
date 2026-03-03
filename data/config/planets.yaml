@@ -1,48 +1,59 @@
 # planets.yaml
+# Based on ADR 0005: Market/Economy System for Space-Western Trading Game
+# Planet types with their supply/demand patterns as specified in ADR 0005
+
 - id: earth
   orbit_radius: 1.0
   orbit_period: 12  # months
-  produces: [Foodstuffs, Ice]
-  demands: [Metal Ores, Fuel]
-
-- id: mercury
-  orbit_radius: 0.5
-  orbit_period: 6  # months
-  produces: []
-  demands: [Fuel]
-
-- id: venus
-  orbit_radius: 1.2
-  orbit_period: 24  # months
-  produces: [Foodstuffs]
-  demands: [Metal Ores, Fuel]
+  # Agricultural Planet
+  produces: [Water, Foodstuffs]
+  demands: [Medicine, Firearms, Ammunition, Electronics]
+  ignores: [Metals, Antimatter, Narcotics, Alien Artefacts]
 
 - id: mars
   orbit_radius: 1.5
-  orbit_period: 12  # months
-  produces: [Foodstuffs, Metal Ores]
-  demands: [Fuel]
+  orbit_period: 18  # months
+  # Mega City Planet
+  produces: [Electronics, Medicine, Narcotics]
+  demands: [Water, Foodstuffs, Firearms, Ammunition]
+  ignores: [Metals, Antimatter, Alien Artefacts]
 
-- id: jupiter
-  orbit_radius: 4.0
+- id: ceres
+  orbit_radius: 2.8
+  orbit_period: 48  # months
+  # Mining Planet
+  produces: [Metals, Antimatter, Electronics]
+  demands: [Water, Foodstuffs, Medicine, Ammunition]
+  ignores: [Narcotics, Alien Artefacts]
+
+- id: space_station_alpha
+  orbit_radius: 1.2
+  orbit_period: 6  # months
+  # Pirate Space Station
+  produces: [Narcotics, Ammunition]
+  demands: [Foodstuffs, Firearms, Medicine]
+  ignores: [Water, Metals, Antimatter, Electronics, Alien Artefacts]
+
+- id: research_outpost_gamma
+  orbit_radius: 3.5
+  orbit_period: 36  # months
+  # Research Outpost
+  produces: [Electronics, Medicine, Alien Artefacts]
+  demands: [Water, Foodstuffs]
+  ignores: [Firearms, Ammunition, Metals, Antimatter, Narcotics]
+
+- id: industrial_hub_delta
+  orbit_radius: 2.0
   orbit_period: 24  # months
-  produces: [Refined Alloys, Computer Parts]
-  demands: [Metal Ores, Fuel]
+  # Industrial Planet
+  produces: [Electronics, Metals, Ammunition, Antimatter]
+  demands: [Water, Foodstuffs, Medicine]
+  ignores: [Narcotics, Alien Artefacts]
 
-- id: saturn
-  orbit_radius: 6.5
-  orbit_period: 12  # months
-  produces: [Foodstuffs, Refined Alloys]
-  demands: [Fuel, Metal Ores]
-
-- id: uranus
-  orbit_radius: 8.0
-  orbit_period: 24  # months
-  produces: [Computer Parts, Luxury Goods]
-  demands: [Metal Ores, Fuel]
-
-- id: neptune
-  orbit_radius: 9.5
-  orbit_period: 12  # months
-  produces: [Refined Alloys, Foodstuffs]
-  demands: [Fuel, Metal Ores]
+- id: frontier_colony_beta
+  orbit_radius: 4.2
+  orbit_period: 60  # months
+  # Frontier Colony
+  produces: [Water, Foodstuffs]
+  demands: [Medicine, Firearms, Ammunition, Electronics, Metals, Antimatter, Alien Artefacts]
+  ignores: [Narcotics]
