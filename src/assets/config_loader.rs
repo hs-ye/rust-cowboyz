@@ -7,8 +7,8 @@ use std::fs;
 #[derive(Debug, Deserialize)]
 pub struct PlanetConfig {
     pub id: String,
-    pub orbit_radius: f64,
-    pub orbit_period: f64,
+    pub orbit_radius: u32,  // Integer distance from star
+    pub orbit_period: u32,  // Turns to complete one orbit
     pub planet_type: String,  // Planet type as string, will be converted to enum
     #[serde(default)] // This allows the field to be missing without causing an error
     pub produces: Vec<String>,  // Optional override for produces

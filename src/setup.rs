@@ -72,7 +72,7 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
                 id: config.id,
                 orbit_radius: config.orbit_radius,
                 orbit_period: config.orbit_period,
-                position: orbits::Position { x: 0.0, y: 0.0 }, // Initial position is calculated later
+                position: orbits::Position::start(), // Initial position at turn 0
                 economy: economy::PlanetEconomy { market },
                 planet_type,
             }
@@ -135,11 +135,12 @@ pub struct World {
 impl World {
     /// Calculates and sets the initial orbital positions of all planets.
     pub fn initialize_positions(&mut self) {
+        // Use current turn to calculate initial positions
+        let current_turn = self.game_clock.current_turn;
         for planet in &mut self.planets {
             planet.position = orbits::calculate_orbit_position(
-                planet.orbit_radius,
                 planet.orbit_period,
-                self.current_time,
+                current_turn,
             );
         }
     }
@@ -171,14 +172,14 @@ mod tests {
         let mut planets_file = File::create(&planets_path).expect("Failed to create planets file");
         planets_file.write_all(b"
 - id: test_earth
-  orbit_radius: 1.0
-  orbit_period: 12.0
+  orbit_radius: 5
+  orbit_period: 10
   planet_type: Agricultural
   produces: [Water]
   demands: [Medicine]
 - id: test_mars
-  orbit_radius: 1.5
-  orbit_period: 24.0
+  orbit_radius: 12
+  orbit_period: 15
   planet_type: Mining
   produces: [Medicine]
   demands: [Water]
@@ -196,7 +197,7 @@ mod tests {
 
         // 5. Assert specific planet data is correct
         let earth = world.planets.iter().find(|p| p.id == "test_earth").expect("Planet 'test_earth' not found");
-        assert_eq!(earth.orbit_radius, 1.0);
+        assert_eq!(earth.orbit_radius, 5);
         assert_eq!(earth.planet_type, planet_types::PlanetType::Agricultural);
 
         // Find the water market on earth (produced)
@@ -222,7 +223,7 @@ mod tests {
 
         // 6. Assert that initial positions have been calculated
         for planet in &world.planets {
-            let expected_pos = orbits::calculate_orbit_position(planet.orbit_radius, planet.orbit_period, 0.0);
+            let expected_pos = orbits::calculate_orbit_position(planet.orbit_period, world.game_clock.current_turn);
             assert_eq!(planet.position, expected_pos);
         }
     }

@@ -170,18 +170,18 @@ mod tests {
 
         let planet_earth = Planet {
             id: "earth".to_string(),
-            orbit_radius: 1.0,
-            orbit_period: 12.0,
-            position: Position { x: 1.0, y: 0.0 },
+            orbit_radius: 5,
+            orbit_period: 10,
+            position: Position::new(0),
             economy: PlanetEconomy { market: vec![market_earth_water, market_earth_food] },
             planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
         };
 
         let planet_mars = Planet {
             id: "mars".to_string(),
-            orbit_radius: 1.5,
-            orbit_period: 24.0,
-            position: Position { x: -1.5, y: 0.0 },
+            orbit_radius: 12,
+            orbit_period: 15,
+            position: Position::new(7),
             economy: PlanetEconomy { market: vec![] },
             planet_type: crate::simulation::planet_types::PlanetType::Mining,
         };
@@ -272,7 +272,11 @@ mod tests {
         let result = handle_travel(&mut world, "mars");
         assert!(result.is_ok());
         assert_eq!(world.player.location, "mars");
-        assert_eq!(world.game_clock.current_turn, 6);
+        // Earth orbit_radius: 5, Mars orbit_radius: 12
+        // Distance: |12 - 5| = 7
+        // Travel time: 2 * sqrt(7/1) = 5.29... → ceil = 6 turns
+        // Starting turn: 1, after travel: 1 + 6 = 7
+        assert_eq!(world.game_clock.current_turn, 7);
     }
 
     #[test]

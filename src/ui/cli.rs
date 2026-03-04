@@ -129,18 +129,18 @@ mod tests {
 
         let planet_earth = Planet {
             id: "Earth".to_string(),
-            orbit_radius: 1.0,
-            orbit_period: 12.0,
-            position: Position { x: 1.0, y: 0.0 },
+            orbit_radius: 5,
+            orbit_period: 10,
+            position: Position::new(0),
             economy: PlanetEconomy { market: vec![market_earth_food, market_earth_water] },
             planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
         };
 
         let planet_mars = Planet {
             id: "Mars".to_string(),
-            orbit_radius: 1.5,
-            orbit_period: 24.0,
-            position: Position { x: -1.5, y: 0.0 },
+            orbit_radius: 12,
+            orbit_period: 15,
+            position: Position::new(7),
             economy: PlanetEconomy { market: vec![] }, // Empty market for simplicity
             planet_type: crate::simulation::planet_types::PlanetType::Mining,
         };
