@@ -52,3 +52,12 @@ Instructions for anyone (or any AI) working on the project.
 
 *   "Ensure `cargo clippy` and `cargo test` pass before submitting changes."
 *   "When adding new game data, update the corresponding YAML files in `data/config/`."
+
+## 7. GitHub Project Board Configuration
+
+### Project Board Configuration
+- `PROJECT_BOARD_FIELD_ID`: PVTSSF_lAHOAHpRbM4BPxw-zg-FswM
+- `PROJECT_ID`: 1
+- `READY_STATUS_OPTION_ID`: 61e4505c
+- `IN_PROGRESS_STATUS_OPTION_ID`: 47fc9ee4
+- `DONE_STATUS_OPTION_ID`: 98236657

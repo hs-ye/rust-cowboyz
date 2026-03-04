@@ -7,12 +7,15 @@ use std::fs;
 #[derive(Debug, Deserialize)]
 pub struct PlanetConfig {
     pub id: String,
-    pub orbit_radius: f64,
-    pub orbit_period: f64,
-    pub produces: Vec<String>,
-    pub demands: Vec<String>,
+    pub orbit_radius: u32,  // Integer distance from star
+    pub orbit_period: u32,  // Turns to complete one orbit
+    pub planet_type: String,  // Planet type as string, will be converted to enum
     #[serde(default)] // This allows the field to be missing without causing an error
-    pub ignores: Vec<String>,
+    pub produces: Vec<String>,  // Optional override for produces
+    #[serde(default)] // This allows the field to be missing without causing an error
+    pub demands: Vec<String>,   // Optional override for demands
+    #[serde(default)] // This allows the field to be missing without causing an error
+    pub ignores: Vec<String>,   // Optional override for ignores
 }
 
 // Base commodity config in the game, used to hold base unmodified values
