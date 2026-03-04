@@ -2,6 +2,9 @@ pub mod actions;
 pub mod inventory;
 pub mod ship;
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub money: u32,
     pub location: String,

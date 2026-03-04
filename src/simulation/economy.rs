@@ -39,10 +39,10 @@ impl PriceVolatility {
 }
 
 /// Holds the key supply/demand information about a particular commodity in a particular market.
-/// 
+///
 /// Prices are calculated using the formula from ADR 0005:
 /// Current Price = Base Price × Local Multiplier × Supply Factor × Demand Factor
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarketGood {
     pub commodity_type: CommodityType,  // The commodity type this market entry represents
     pub base_price: u32,                // Base price from commodity definition
@@ -370,7 +370,7 @@ fn rand_f64() -> f64 {
 }
 
 /// Represents the economy of a single planet/station
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PlanetEconomy {
     pub planet_type: PlanetType,
     pub market: HashMap<CommodityType, MarketGood>,

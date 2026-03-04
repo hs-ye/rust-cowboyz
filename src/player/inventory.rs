@@ -1,6 +1,7 @@
 use crate::simulation::commodity::{CommodityType, CommodityInventory};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CargoHold {
     pub capacity: u32,
     pub commodities: CommodityInventory, // Using the new CommodityInventory system
