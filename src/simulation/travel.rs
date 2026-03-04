@@ -22,6 +22,7 @@ mod tests {
             orbit_period: 12.0,
             position: Position { x: 1.0, y: 0.0 },
             economy: PlanetEconomy { market: vec![] },
+            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
         };
         let planet2 = Planet {
             id: "mars".to_string(),
@@ -29,6 +30,7 @@ mod tests {
             orbit_period: 24.0,
             position: Position { x: -1.5, y: 0.0 },
             economy: PlanetEconomy { market: vec![] },
+            planet_type: crate::simulation::planet_types::PlanetType::Mining,
         };
 
         let travel_time = calculate_travel_time(&planet1, &planet2, 0.5);

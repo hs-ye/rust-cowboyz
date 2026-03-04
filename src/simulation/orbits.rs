@@ -1,4 +1,5 @@
 use crate::simulation::economy;
+use crate::simulation::planet_types::PlanetType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Position {
@@ -13,6 +14,7 @@ pub struct Planet {
     pub orbit_period: f64,  // Months for full orbit
     pub position: Position,
     pub economy: economy::PlanetEconomy,
+    pub planet_type: PlanetType,
 }
 
 /// Calculates planet position at given time

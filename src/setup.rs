@@ -1,7 +1,7 @@
 // src/setup.rs
 
 use crate::assets::config_loader;
-use crate::simulation::{economy, orbits, commodity};
+use crate::simulation::{economy, orbits, commodity, planet_types};
 
 /// Initializes the game world from configuration files.
 ///
@@ -34,8 +34,39 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
     configs
         .into_iter()
         .map(|config| {
-            // Use the produces and demands from the config file to create market
-            let market = initialize_market(&config.produces, &config.demands);
+            // Convert the planet type string to the enum
+            let planet_type = match config.planet_type.as_str().to_lowercase().replace(" ", "").replace("-", "") {
+                s if s.contains("agricultural") => planet_types::PlanetType::Agricultural,
+                s if s.contains("megacity") || s.contains("megacity") => planet_types::PlanetType::MegaCity,
+                s if s.contains("mining") => planet_types::PlanetType::Mining,
+                s if s.contains("pirate") && s.contains("station") => planet_types::PlanetType::PirateSpaceStation,
+                s if s.contains("research") && s.contains("outpost") => planet_types::PlanetType::ResearchOutpost,
+                s if s.contains("industrial") => planet_types::PlanetType::Industrial,
+                s if s.contains("frontier") && s.contains("colony") => planet_types::PlanetType::FrontierColony,
+                _ => {
+                    eprintln!("Warning: Unknown planet type '{}', defaulting to Agricultural", config.planet_type);
+                    planet_types::PlanetType::Agricultural
+                }
+            };
+
+            // Use the planet type to determine produces and demands, with optional overrides from config
+            let produces = if !config.produces.is_empty() {
+                // Use custom produces from config
+                config.produces.clone()
+            } else {
+                // Use default produces from planet type
+                planet_type.supplies().iter().map(|ct: &crate::simulation::commodity::CommodityType| ct.display_name().to_string()).collect()
+            };
+
+            let demands = if !config.demands.is_empty() {
+                // Use custom demands from config
+                config.demands.clone()
+            } else {
+                // Use default demands from planet type
+                planet_type.demands().iter().map(|ct: &crate::simulation::commodity::CommodityType| ct.display_name().to_string()).collect()
+            };
+
+            let market = initialize_market(&produces, &demands);
 
             orbits::Planet {
                 id: config.id,
@@ -43,6 +74,7 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
                 orbit_period: config.orbit_period,
                 position: orbits::Position { x: 0.0, y: 0.0 }, // Initial position is calculated later
                 economy: economy::PlanetEconomy { market },
+                planet_type,
             }
         })
         .collect()
@@ -141,11 +173,13 @@ mod tests {
 - id: test_earth
   orbit_radius: 1.0
   orbit_period: 12.0
+  planet_type: Agricultural
   produces: [Water]
   demands: [Medicine]
 - id: test_mars
   orbit_radius: 1.5
   orbit_period: 24.0
+  planet_type: Mining
   produces: [Medicine]
   demands: [Water]
 ").expect("Failed to write planets file");
@@ -163,6 +197,7 @@ mod tests {
         // 5. Assert specific planet data is correct
         let earth = world.planets.iter().find(|p| p.id == "test_earth").expect("Planet 'test_earth' not found");
         assert_eq!(earth.orbit_radius, 1.0);
+        assert_eq!(earth.planet_type, planet_types::PlanetType::Agricultural);
 
         // Find the water market on earth (produced)
         let earth_water_market = earth.economy.market.iter().find(|mc| mc.commodity_type == commodity::CommodityType::Water);
@@ -181,6 +216,9 @@ mod tests {
             // Check that demanded goods have appropriate prices
             assert_eq!(earth_medicine_market.commodity_type.base_value(), 100);
         }
+
+        let mars = world.planets.iter().find(|p| p.id == "test_mars").expect("Planet 'test_mars' not found");
+        assert_eq!(mars.planet_type, planet_types::PlanetType::Mining);
 
         // 6. Assert that initial positions have been calculated
         for planet in &world.planets {

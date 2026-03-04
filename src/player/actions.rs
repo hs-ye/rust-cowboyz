@@ -174,6 +174,7 @@ mod tests {
             orbit_period: 12.0,
             position: Position { x: 1.0, y: 0.0 },
             economy: PlanetEconomy { market: vec![market_earth_water, market_earth_food] },
+            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
         };
 
         let planet_mars = Planet {
@@ -182,6 +183,7 @@ mod tests {
             orbit_period: 24.0,
             position: Position { x: -1.5, y: 0.0 },
             economy: PlanetEconomy { market: vec![] },
+            planet_type: crate::simulation::planet_types::PlanetType::Mining,
         };
 
         World {
