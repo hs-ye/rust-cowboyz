@@ -2,6 +2,7 @@
 
 use crate::assets::config_loader;
 use crate::simulation::{economy, orbits, commodity, planet_types};
+use std::collections::HashMap;
 
 /// Initializes the game world from configuration files.
 ///
@@ -73,7 +74,11 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
                 orbit_radius: config.orbit_radius,
                 orbit_period: config.orbit_period,
                 position: orbits::Position::start(), // Initial position at turn 0
-                economy: economy::PlanetEconomy { market },
+                economy: economy::PlanetEconomy { 
+                    market,
+                    planet_type: planet_type.clone(),
+                    active_events: Vec::new(),
+                },
                 planet_type,
             }
         })
@@ -84,44 +89,46 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
 fn initialize_market(
     produced: &[String],
     demanded: &[String],
-) -> Vec<economy::MarketCommodity> {
-    commodity::CommodityType::all()
-        .into_iter()
-        .map(|commodity_type| {
-            // Convert string names to commodity types for comparison
-            let commodity_name = commodity_type.display_name().to_lowercase().replace(" ", "");
-            let base_price = commodity_type.base_value();
-            
-            let (buy_price, sell_price, is_produced, is_demanded) = if produced.iter().any(|s| 
-                s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
-                s.to_lowercase() == commodity_type.display_name().to_lowercase()
-            ) {
-                // Produced goods: Player sells to planet, so planet's buy price is higher.
-                // (Player sells to planet at buy_price)
-                ( (base_price as f64 * 1.2) as u32, base_price, true, false)
-            } else if demanded.iter().any(|s| 
-                s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
-                s.to_lowercase() == commodity_type.display_name().to_lowercase()
-            ) {
-                // Demanded goods: Player buys from planet, so planet's sell price is higher.
-                // (Player buys from planet at sell_price)
-                (base_price, (base_price as f64 * 1.2) as u32, false, true)
-            } else {
-                // Neutral goods
-                (base_price, base_price, false, false)
-            };
-
-            economy::MarketCommodity {
-                commodity_type: commodity_type.clone(),
-                buy_price,
-                sell_price,
-                supply: 1.0,
-                demand: 1.0,
-                is_produced,
-                is_demanded,
-            }
-        })
-        .collect()
+) -> HashMap<commodity::CommodityType, economy::MarketGood> {
+    let mut market = HashMap::new();
+    
+    for commodity_type in commodity::CommodityType::all() {
+        // Convert string names to commodity types for comparison
+        let commodity_name = commodity_type.display_name().to_lowercase().replace(" ", "");
+        
+        let is_produced = produced.iter().any(|s|
+            s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
+            s.to_lowercase() == commodity_type.display_name().to_lowercase()
+        );
+        
+        let is_demanded = demanded.iter().any(|s|
+            s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
+            s.to_lowercase() == commodity_type.display_name().to_lowercase()
+        );
+        
+        // Create market good with the new structure
+        let mut market_good = economy::MarketGood::new(&commodity_type, &planet_types::PlanetType::Agricultural);
+        
+        // Override the produced/demanded flags based on config
+        market_good.is_produced = is_produced;
+        market_good.is_demanded = is_demanded;
+        
+        // Recalculate prices based on the new flags
+        if is_produced {
+            market_good.local_multiplier = 0.7; // Produced locally - lower price
+            market_good.supply_factor = 1.3;
+        } else if is_demanded {
+            market_good.local_multiplier = 1.3; // Demanded locally - higher price
+            market_good.demand_factor = 1.3;
+        } else {
+            market_good.local_multiplier = 1.0; // Neutral
+        }
+        
+        market_good.calculate_prices();
+        market.insert(commodity_type, market_good);
+    }
+    
+    market
 }
 
 /// Represents the complete state of the game world.
@@ -201,7 +208,7 @@ mod tests {
         assert_eq!(earth.planet_type, planet_types::PlanetType::Agricultural);
 
         // Find the water market on earth (produced)
-        let earth_water_market = earth.economy.market.iter().find(|mc| mc.commodity_type == commodity::CommodityType::Water);
+        let earth_water_market = earth.economy.market.get(&commodity::CommodityType::Water);
         if let Some(earth_water_market) = earth_water_market {
             assert!(earth_water_market.is_produced);
             assert!(!earth_water_market.is_demanded);
@@ -210,7 +217,7 @@ mod tests {
         }
 
         // Find the medicine market on earth (demanded)
-        let earth_medicine_market = earth.economy.market.iter().find(|mc| mc.commodity_type == commodity::CommodityType::Medicine);
+        let earth_medicine_market = earth.economy.market.get(&commodity::CommodityType::Medicine);
         if let Some(earth_medicine_market) = earth_medicine_market {
             assert!(!earth_medicine_market.is_produced);
             assert!(earth_medicine_market.is_demanded);

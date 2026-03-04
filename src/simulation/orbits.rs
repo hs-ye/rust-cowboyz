@@ -52,6 +52,7 @@ pub fn advance_planet_positions(planets: &mut [Planet]) {
 mod tests {
     use super::*;
     use crate::simulation::economy::PlanetEconomy;
+    use std::collections::HashMap;
 
     #[test]
     fn test_calculate_orbit_position() {
@@ -77,7 +78,11 @@ mod tests {
                 orbit_radius: 5,
                 orbit_period: 10,
                 position: Position::new(5),
-                economy: PlanetEconomy { market: vec![] },
+                economy: PlanetEconomy { 
+                    market: HashMap::new(),
+                    planet_type: PlanetType::Agricultural,
+                    active_events: Vec::new(),
+                },
                 planet_type: PlanetType::Agricultural,
             },
             Planet {
@@ -85,7 +90,11 @@ mod tests {
                 orbit_radius: 12,
                 orbit_period: 15,
                 position: Position::new(14),
-                economy: PlanetEconomy { market: vec![] },
+                economy: PlanetEconomy { 
+                    market: HashMap::new(),
+                    planet_type: PlanetType::Mining,
+                    active_events: Vec::new(),
+                },
                 planet_type: PlanetType::Mining,
             },
         ];
@@ -108,7 +117,11 @@ mod tests {
                 orbit_radius: 3,
                 orbit_period: 0,
                 position: Position::new(5),
-                economy: PlanetEconomy { market: vec![] },
+                economy: PlanetEconomy { 
+                    market: HashMap::new(),
+                    planet_type: PlanetType::PirateSpaceStation,
+                    active_events: Vec::new(),
+                },
                 planet_type: PlanetType::PirateSpaceStation,
             },
         ];

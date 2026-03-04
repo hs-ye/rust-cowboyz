@@ -36,6 +36,8 @@ mod tests {
     use super::*;
     use crate::simulation::economy::PlanetEconomy;
     use crate::simulation::orbits::Position;
+    use crate::simulation::planet_types::PlanetType;
+    use std::collections::HashMap;
 
     #[test]
     fn test_calculate_travel_turns() {
@@ -44,16 +46,24 @@ mod tests {
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Agricultural,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Agricultural,
         };
         let planet2 = Planet {
             id: "mars".to_string(),
             orbit_radius: 12,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Mining,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Mining,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Mining,
         };
 
         // Base distance = |12 - 5| = 7
@@ -69,16 +79,24 @@ mod tests {
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Agricultural,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Agricultural,
         };
         let planet2 = Planet {
             id: "mars".to_string(),
             orbit_radius: 5,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Mining,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Mining,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Mining,
         };
 
         // Base distance = |5 - 5| = 0, should return minimum 1 turn
@@ -93,16 +111,24 @@ mod tests {
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Agricultural,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Agricultural,
         };
         let planet2 = Planet {
             id: "mars".to_string(),
             orbit_radius: 12,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Mining,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Mining,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Mining,
         };
 
         // Base distance = |12 - 5| = 7
@@ -118,16 +144,24 @@ mod tests {
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Agricultural,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Agricultural,
         };
         let planet2 = Planet {
             id: "mars".to_string(),
             orbit_radius: 12,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { market: vec![] },
-            planet_type: crate::simulation::planet_types::PlanetType::Mining,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Mining,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Mining,
         };
 
         // Legacy function should still work (uses default acceleration of 1)

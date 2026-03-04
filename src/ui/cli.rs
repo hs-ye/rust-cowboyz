@@ -65,7 +65,7 @@ pub fn display_market_status(world: &World) -> String {
     if let Some(planet) = current_planet {
         market_list.push_str("Commodity      Buy Price   Sell Price\n");
         market_list.push_str("---------------------------------------\n");
-        for market_commodity in &planet.economy.market {
+        for market_commodity in planet.economy.market.values() {
             market_list.push_str(&format!("{:<14} {:<12} {:<12}\n",
                                            market_commodity.commodity_type.display_name(),
                                            market_commodity.buy_price,
@@ -104,7 +104,7 @@ pub fn display_planet_info(world: &World, planet_id: &str) -> String {
     let mut market_list = String::new();
     market_list.push_str("Commodity      Buy Price   Sell Price\n");
     market_list.push_str("---------------------------------------\n");
-    for market_commodity in &planet.economy.market {
+    for market_commodity in planet.economy.market.values() {
         market_list.push_str(&format!("{:<14} {:<12} {:<12}\n",
                                        market_commodity.commodity_type.display_name(),
                                        market_commodity.buy_price,
@@ -119,21 +119,30 @@ mod tests {
     use super::*;
     use crate::setup::World;
     use crate::player::{Player, inventory::CargoHold, ship::Ship};
-    use crate::simulation::{economy::{MarketCommodity, PlanetEconomy}, commodity::CommodityType, orbits::{Planet, Position}};
+    use crate::simulation::economy::{MarketGood, PlanetEconomy};
+    use crate::simulation::commodity::CommodityType;
+    use crate::simulation::orbits::{Planet, Position};
+    use crate::simulation::planet_types::PlanetType;
     use crate::game_state::GameClock;
+    use std::collections::HashMap;
 
     // Helper function to create a mock World instance
     fn create_mock_world() -> World {
-        let market_earth_food = MarketCommodity::new(CommodityType::Foodstuffs, 20);
-        let market_earth_water = MarketCommodity::new(CommodityType::Water, 10);
+        let mut market_earth = HashMap::new();
+        market_earth.insert(CommodityType::Foodstuffs, MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::Agricultural));
+        market_earth.insert(CommodityType::Water, MarketGood::new(&CommodityType::Water, &PlanetType::Agricultural));
 
         let planet_earth = Planet {
             id: "Earth".to_string(),
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { market: vec![market_earth_food, market_earth_water] },
-            planet_type: crate::simulation::planet_types::PlanetType::Agricultural,
+            economy: PlanetEconomy { 
+                market: market_earth,
+                planet_type: PlanetType::Agricultural,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Agricultural,
         };
 
         let planet_mars = Planet {
@@ -141,8 +150,12 @@ mod tests {
             orbit_radius: 12,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { market: vec![] }, // Empty market for simplicity
-            planet_type: crate::simulation::planet_types::PlanetType::Mining,
+            economy: PlanetEconomy { 
+                market: HashMap::new(),
+                planet_type: PlanetType::Mining,
+                active_events: Vec::new(),
+            },
+            planet_type: PlanetType::Mining,
         };
 
         let mut player_inventory = CargoHold::new(100);
