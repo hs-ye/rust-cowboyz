@@ -1,8 +1,8 @@
 use crate::{
     setup::World,
-    simulation::economy::MarketGood,
     simulation::commodity::CommodityType,
-    simulation::travel::calculate_travel_time,
+    simulation::travel::calculate_travel_turns,
+    simulation::turn_manager::TurnManager,
 };
 
 pub fn handle_buy(
@@ -115,20 +115,73 @@ pub fn handle_travel(
         (origin.clone(), destination.clone())
     };
 
-    let travel_time = calculate_travel_time(&origin_planet, &destination_planet, world.player.ship.speed);
+    // Calculate travel time using the new turn-based function
+    let travel_turns = calculate_travel_turns(
+        &origin_planet, 
+        &destination_planet, 
+        world.player.ship.acceleration
+    );
 
-    world.game_clock.current_turn += travel_time;
+    // Use TurnManager to advance all game systems synchronously
+    // This advances: game clock, planet orbital positions, and market prices
+    let result = TurnManager::advance_turns(
+        &mut world.planets,
+        None, // Market manager not stored in World yet
+        &mut world.game_clock,
+        travel_turns,
+    );
+
+    // Update player location
     world.player.location = destination_planet_id.to_string();
 
-    Ok(format!("Traveled to {}. It took {} months.", destination_planet_id, travel_time))
+    // Build response message
+    let message = if result.is_game_over {
+        format!(
+            "Traveled to {}. It took {} turns. GAME OVER!",
+            destination_planet_id, 
+            result.turns_advanced
+        )
+    } else {
+        format!(
+            "Traveled to {}. It took {} turns. Current turn: {}/{}.",
+            destination_planet_id, 
+            result.turns_advanced,
+            world.game_clock.current_turn,
+            world.game_clock.total_turns
+        )
+    };
+
+    Ok(message)
 }
 
 pub fn handle_wait(
     world: &mut World,
-    months: u32,
+    turns: u32,
 ) -> Result<String, String> {
-    world.game_clock.current_turn += months;
-    Ok(format!("Waited for {} months.", months))
+    // Use TurnManager to advance all game systems synchronously
+    let result = TurnManager::advance_turns(
+        &mut world.planets,
+        None, // Market manager not stored in World yet
+        &mut world.game_clock,
+        turns,
+    );
+
+    // Build response message
+    let message = if result.is_game_over {
+        format!(
+            "Waited for {} turns. GAME OVER!",
+            result.turns_advanced
+        )
+    } else {
+        format!(
+            "Waited for {} turns. Current turn: {}/{}.",
+            result.turns_advanced,
+            world.game_clock.current_turn,
+            world.game_clock.total_turns
+        )
+    };
+
+    Ok(message)
 }
 
 /// Helper function to convert string to CommodityType
