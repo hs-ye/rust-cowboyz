@@ -1,9 +1,10 @@
 use crate::simulation::economy;
 use crate::simulation::planet_types::PlanetType;
+use serde::{Deserialize, Serialize};
 
 /// Turn-based orbital position: integer from 0 to (orbital_period - 1)
 /// This represents the planet's position in its orbit at a given turn
-#[derive(Debug, Clone, PartialEq, Copy, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Copy, Eq, Default, Serialize, Deserialize)]
 pub struct Position {
     pub orbital_position: u32,  // Integer position in orbit (0 to orbital_period-1)
 }
@@ -20,7 +21,7 @@ impl Position {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Planet {
     pub id: String,
     pub orbit_radius: u32,  // Integer distance from star (in arbitrary units)

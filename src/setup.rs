@@ -2,6 +2,7 @@
 
 use crate::assets::config_loader;
 use crate::simulation::{economy, orbits, commodity, planet_types};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Initializes the game world from configuration files.
@@ -132,6 +133,7 @@ fn initialize_market(
 }
 
 /// Represents the complete state of the game world.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct World {
     pub planets: Vec<orbits::Planet>,
     pub current_time: f64, // In-game time, measured in months

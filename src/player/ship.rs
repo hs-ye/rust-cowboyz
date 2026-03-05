@@ -1,6 +1,8 @@
 /// Ship configuration for the player
 /// Based on ADR 0002: Movement Mechanics System
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ship {
     pub speed: f64,           // Legacy field (kept for compatibility)
     pub acceleration: u32,   // Ship acceleration in units/turn² (default: 1)
