@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 use crate::setup::World;
+use crate::simulation::economy::PriceAnomaly;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -65,28 +66,17 @@ pub fn display_player_status(world: &World) -> String {
 }
 
 pub fn display_market_status(world: &World) -> String {
-    let mut market_list = String::new();
     let current_planet = world.planets.iter().find(|p| p.id == world.player.location);
 
     if let Some(planet) = current_planet {
-        market_list.push_str("Commodity      Buy Price   Sell Price\n");
-        market_list.push_str("---------------------------------------\n");
-        for market_commodity in planet.economy.market.values() {
-            market_list.push_str(&format!(
-                "{:<14} {:<12} {:<12}\n",
-                market_commodity.commodity_type.display_name(),
-                market_commodity.buy_price,
-                market_commodity.sell_price
-            ));
-        }
+        format!(
+            "--- Market Status ({}) ---\n{}",
+            world.player.location,
+            build_enhanced_market_display(&planet.economy)
+        )
     } else {
-        market_list.push_str("Market information not available for current location.");
+        "--- Market Status ---\nMarket information not available for current location.".to_string()
     }
-
-    format!(
-        "--- Market Status ({}) ---\n{}",
-        world.player.location, market_list
-    )
 }
 
 pub fn display_travel_options(world: &World) -> String {
@@ -123,19 +113,194 @@ pub fn display_planet_info(world: &World, planet_id: &str) -> String {
         .ok_or_else(|| format!("Planet '{}' not found", planet_id))
         .expect("Planet not found");
 
-    let mut market_list = String::new();
-    market_list.push_str("Commodity      Buy Price   Sell Price\n");
-    market_list.push_str("---------------------------------------\n");
-    for market_commodity in planet.economy.market.values() {
-        market_list.push_str(&format!(
-            "{:<14} {:<12} {:<12}\n",
-            market_commodity.commodity_type.display_name(),
-            market_commodity.buy_price,
-            market_commodity.sell_price
-        ));
+    format!(
+        "--- Market Status ({}) ---\n{}",
+        planet.id,
+        build_enhanced_market_display(&planet.economy)
+    )
+}
+
+/// Format price trend as a visual indicator
+/// Returns "↑" for rising, "↓" for falling, "→" for stable
+fn format_price_trend(trend: f64) -> &'static str {
+    if trend > 0.05 {
+        "↑" // Rising
+    } else if trend < -0.05 {
+        "↓" // Falling
+    } else {
+        "→" // Stable
+    }
+}
+
+/// Format price trend as text description
+fn format_price_trend_text(trend: f64) -> String {
+    if trend > 0.1 {
+        "Rising Fast".to_string()
+    } else if trend > 0.05 {
+        "Rising".to_string()
+    } else if trend > -0.05 {
+        "Stable".to_string()
+    } else if trend > -0.1 {
+        "Falling".to_string()
+    } else {
+        "Falling Fast".to_string()
+    }
+}
+
+/// Format price anomaly indicator
+/// Returns Some(indicator) if there's an anomaly, None otherwise
+fn format_price_anomaly(anomaly: Option<PriceAnomaly>) -> Option<&'static str> {
+    match anomaly {
+        Some(PriceAnomaly::High) => Some("SELL"), // Price is high, good time to sell
+        Some(PriceAnomaly::Low) => Some("BUY"),   // Price is low, good time to buy
+        None => None,
+    }
+}
+
+/// Format produced/demanded status indicator
+fn format_supply_demand_status(is_produced: bool, is_demanded: bool) -> &'static str {
+    if is_produced && is_demanded {
+        "↔" // Both
+    } else if is_produced {
+        "↓" // Produced here (supply)
+    } else if is_demanded {
+        "↑" // Demanded here (demand)
+    } else {
+        " " // Neither
+    }
+}
+
+/// Build the enhanced market display with all information
+/// Shows: price trends, anomalies, produced/demanded status, active events
+fn build_enhanced_market_display(economy: &crate::simulation::economy::PlanetEconomy) -> String {
+    let mut output = String::new();
+
+    // Display active market events first
+    if !economy.active_events.is_empty() {
+        output.push_str("*** ACTIVE MARKET EVENTS ***\n");
+        for event in &economy.active_events {
+            output.push_str(&format!(
+                "  ⚠ {}: {}\n",
+                event.display_name(),
+                event.description()
+            ));
+        }
+        output.push('\n');
     }
 
-    format!("--- Market Status ({}) ---\n{}", planet.id, market_list)
+    // Display profitable trade opportunities
+    let profitable_trades = economy.get_profitable_trades();
+    if !profitable_trades.is_empty() {
+        output.push_str("*** PROFITABLE OPPORTUNITIES ***\n");
+        for (commodity, potential) in &profitable_trades {
+            let anomaly = economy
+                .get_commodity(commodity)
+                .and_then(|mg| mg.is_price_anomaly());
+            let indicator = match anomaly {
+                Some(PriceAnomaly::High) => "SELL NOW",
+                Some(PriceAnomaly::Low) => "BUY NOW",
+                None => "",
+            };
+            output.push_str(&format!(
+                "  ★ {} - {} (potential: {:.0}%)\n",
+                commodity.display_name(),
+                indicator,
+                potential * 100.0
+            ));
+        }
+        output.push('\n');
+    }
+
+    // Column headers with legend
+    output.push_str("Commodity      Buy    Sell   Trend Status  Notes\n");
+    output.push_str("-----------------------------------------------------------\n");
+
+    // Group commodities by type: produced, demanded, ignored
+    let produced: Vec<_> = economy
+        .market
+        .values()
+        .filter(|mg| mg.is_produced)
+        .collect();
+    let demanded: Vec<_> = economy
+        .market
+        .values()
+        .filter(|mg| mg.is_demanded && !mg.is_produced)
+        .collect();
+    let ignored: Vec<_> = economy
+        .market
+        .values()
+        .filter(|mg| !mg.is_produced && !mg.is_demanded)
+        .collect();
+
+    // Helper to format a commodity row
+    let format_commodity_row = |mg: &crate::simulation::economy::MarketGood| -> String {
+        let trend_indicator = format_price_trend(mg.get_price_trend());
+        let trend_text = format_price_trend_text(mg.get_price_trend());
+        let status_indicator = format_supply_demand_status(mg.is_produced, mg.is_demanded);
+        let anomaly_indicator = format_price_anomaly(mg.is_price_anomaly());
+
+        // Build status column
+        let status = format!("{}{}", status_indicator, trend_indicator);
+
+        // Build notes column
+        let mut notes = String::new();
+        if mg.is_produced {
+            notes.push_str("PRODUCED");
+        } else if mg.is_demanded {
+            notes.push_str("DEMANDED");
+        }
+        if let Some(anomaly) = anomaly_indicator {
+            if !notes.is_empty() {
+                notes.push_str(", ");
+            }
+            notes.push_str(anomaly);
+        }
+
+        format!(
+            "{:<14} {:<6} {:<6} {:<5} {:<7} {}\n",
+            mg.commodity_type.display_name(),
+            mg.buy_price,
+            mg.sell_price,
+            status,
+            trend_text,
+            notes
+        )
+    };
+
+    // Show produced commodities section
+    if !produced.is_empty() {
+        output.push_str("--- Produced Here (Supply) ---\n");
+        for mg in &produced {
+            output.push_str(&format_commodity_row(mg));
+        }
+        output.push('\n');
+    }
+
+    // Show demanded commodities section
+    if !demanded.is_empty() {
+        output.push_str("--- Demanded Here (High Demand) ---\n");
+        for mg in &demanded {
+            output.push_str(&format_commodity_row(mg));
+        }
+        output.push('\n');
+    }
+
+    // Show ignored commodities section
+    if !ignored.is_empty() {
+        output.push_str("--- Other Commodities ---\n");
+        for mg in &ignored {
+            output.push_str(&format_commodity_row(mg));
+        }
+    }
+
+    // Add legend
+    output.push_str("\nLegend:\n");
+    output.push_str("  Trend: ↑ Rising  ↓ Falling  → Stable\n");
+    output.push_str("  Status: ↓ Produced  ↑ Demanded  ↔ Both\n");
+    output.push_str("  Notes: PRODUCED (local supply)  DEMANDED (local demand)\n");
+    output.push_str("         BUY (low price anomaly)  SELL (high price anomaly)\n");
+
+    output
 }
 
 #[cfg(test)]
@@ -221,9 +386,16 @@ mod tests {
         let world = create_mock_world();
         let output = display_market_status(&world);
         assert!(output.contains("--- Market Status (Earth) ---"));
-        assert!(output.contains("Commodity      Buy Price   Sell Price"));
+        // Check for new enhanced format headers
+        assert!(output.contains("Commodity      Buy    Sell"));
+        assert!(output.contains("Trend"));
+        assert!(output.contains("Status"));
+        assert!(output.contains("Notes"));
+        // Check that commodities are displayed
         assert!(output.contains("Foodstuffs"));
         assert!(output.contains("Water"));
+        // Check for legend
+        assert!(output.contains("Legend:"));
     }
 
     #[test]
