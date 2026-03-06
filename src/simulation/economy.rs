@@ -1949,4 +1949,983 @@ mod trading_system_integration_tests {
             }
         }
     }
+
+    // ============================================================================
+    // Test 7: Verify pricing matches ADR 0005 specifications
+    // ============================================================================
+
+    /// Verify Agricultural planet prices: Water/Foodstuffs cheap, Medicine/Firearms/Ammunition/Electronics expensive
+    /// Per ADR 0005: Agricultural produces Water, Foodstuffs; demands Medicine, Firearms, Ammunition, Electronics
+    #[test]
+    fn test_agricultural_planet_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::Agricultural);
+        let base_water = CommodityType::Water.base_value() as f64;
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+        let base_firearms = CommodityType::Firearms.base_value() as f64;
+        let base_ammo = CommodityType::Ammunition.base_value() as f64;
+        let base_electronics = CommodityType::Electronics.base_value() as f64;
+
+        // Produced commodities (Water, Foodstuffs) should be cheaper than base
+        let water_price = economy
+            .get_commodity(&CommodityType::Water)
+            .unwrap()
+            .current_price as f64;
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+
+        assert!(
+            water_price < base_water,
+            "Water should be cheap (produced locally). Price: {}, Base: {}",
+            water_price,
+            base_water
+        );
+        assert!(
+            food_price < base_food,
+            "Foodstuffs should be cheap (produced locally). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+
+        // Demanded commodities (Medicine, Firearms, Ammunition, Electronics) should be more expensive than base
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+        let firearms_price = economy
+            .get_commodity(&CommodityType::Firearms)
+            .unwrap()
+            .current_price as f64;
+        let ammo_price = economy
+            .get_commodity(&CommodityType::Ammunition)
+            .unwrap()
+            .current_price as f64;
+        let electronics_price = economy
+            .get_commodity(&CommodityType::Electronics)
+            .unwrap()
+            .current_price as f64;
+
+        assert!(
+            medicine_price > base_medicine,
+            "Medicine should be expensive (demanded). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+        assert!(
+            firearms_price > base_firearms,
+            "Firearms should be expensive (demanded). Price: {}, Base: {}",
+            firearms_price,
+            base_firearms
+        );
+        assert!(
+            ammo_price > base_ammo,
+            "Ammunition should be expensive (demanded). Price: {}, Base: {}",
+            ammo_price,
+            base_ammo
+        );
+        assert!(
+            electronics_price > base_electronics,
+            "Electronics should be expensive (demanded). Price: {}, Base: {}",
+            electronics_price,
+            base_electronics
+        );
+    }
+
+    /// Verify MegaCity planet prices: Electronics/Medicine/Narcotics cheap, Water/Foodstuffs/Firearms/Ammunition expensive
+    /// Per ADR 0005: MegaCity produces Electronics, Medicine, Narcotics; demands Water, Foodstuffs, Firearms, Ammunition
+    #[test]
+    fn test_mega_city_planet_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::MegaCity);
+
+        // Produced commodities (Electronics, Medicine, Narcotics) should be cheaper than base
+        let electronics_price = economy
+            .get_commodity(&CommodityType::Electronics)
+            .unwrap()
+            .current_price as f64;
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+        let narcotics_price = economy
+            .get_commodity(&CommodityType::Narcotics)
+            .unwrap()
+            .current_price as f64;
+
+        let base_electronics = CommodityType::Electronics.base_value() as f64;
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+        let base_narcotics = CommodityType::Narcotics.base_value() as f64;
+
+        assert!(
+            electronics_price < base_electronics,
+            "Electronics should be cheap (produced locally). Price: {}, Base: {}",
+            electronics_price,
+            base_electronics
+        );
+        assert!(
+            medicine_price < base_medicine,
+            "Medicine should be cheap (produced locally). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+        assert!(
+            narcotics_price < base_narcotics,
+            "Narcotics should be cheap (produced locally). Price: {}, Base: {}",
+            narcotics_price,
+            base_narcotics
+        );
+
+        // Demanded commodities (Water, Foodstuffs, Firearms, Ammunition) should be more expensive than base
+        let water_price = economy
+            .get_commodity(&CommodityType::Water)
+            .unwrap()
+            .current_price as f64;
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+        let firearms_price = economy
+            .get_commodity(&CommodityType::Firearms)
+            .unwrap()
+            .current_price as f64;
+        let ammo_price = economy
+            .get_commodity(&CommodityType::Ammunition)
+            .unwrap()
+            .current_price as f64;
+
+        let base_water = CommodityType::Water.base_value() as f64;
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+        let base_firearms = CommodityType::Firearms.base_value() as f64;
+        let base_ammo = CommodityType::Ammunition.base_value() as f64;
+
+        assert!(
+            water_price > base_water,
+            "Water should be expensive (demanded). Price: {}, Base: {}",
+            water_price,
+            base_water
+        );
+        assert!(
+            food_price > base_food,
+            "Foodstuffs should be expensive (demanded). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+        assert!(
+            firearms_price > base_firearms,
+            "Firearms should be expensive (demanded). Price: {}, Base: {}",
+            firearms_price,
+            base_firearms
+        );
+        assert!(
+            ammo_price > base_ammo,
+            "Ammunition should be expensive (demanded). Price: {}, Base: {}",
+            ammo_price,
+            base_ammo
+        );
+    }
+
+    /// Verify Mining planet prices: Metals/Antimatter/Electronics cheap, Water/Foodstuffs/Medicine/Ammunition expensive
+    /// Per ADR 0005: Mining produces Metals, Antimatter, Electronics; demands Water, Foodstuffs, Medicine, Ammunition
+    #[test]
+    fn test_mining_planet_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::Mining);
+
+        // Produced commodities (Metals, Antimatter, Electronics) should be cheaper than base
+        let metals_price = economy
+            .get_commodity(&CommodityType::Metals)
+            .unwrap()
+            .current_price as f64;
+        let antimatter_price = economy
+            .get_commodity(&CommodityType::Antimatter)
+            .unwrap()
+            .current_price as f64;
+        let electronics_price = economy
+            .get_commodity(&CommodityType::Electronics)
+            .unwrap()
+            .current_price as f64;
+
+        let base_metals = CommodityType::Metals.base_value() as f64;
+        let base_antimatter = CommodityType::Antimatter.base_value() as f64;
+        let base_electronics = CommodityType::Electronics.base_value() as f64;
+
+        assert!(
+            metals_price < base_metals,
+            "Metals should be cheap (produced locally). Price: {}, Base: {}",
+            metals_price,
+            base_metals
+        );
+        assert!(
+            antimatter_price < base_antimatter,
+            "Antimatter should be cheap (produced locally). Price: {}, Base: {}",
+            antimatter_price,
+            base_antimatter
+        );
+        assert!(
+            electronics_price < base_electronics,
+            "Electronics should be cheap (produced locally). Price: {}, Base: {}",
+            electronics_price,
+            base_electronics
+        );
+
+        // Demanded commodities (Water, Foodstuffs, Medicine, Ammunition) should be more expensive than base
+        let water_price = economy
+            .get_commodity(&CommodityType::Water)
+            .unwrap()
+            .current_price as f64;
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+        let ammo_price = economy
+            .get_commodity(&CommodityType::Ammunition)
+            .unwrap()
+            .current_price as f64;
+
+        let base_water = CommodityType::Water.base_value() as f64;
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+        let base_ammo = CommodityType::Ammunition.base_value() as f64;
+
+        assert!(
+            water_price > base_water,
+            "Water should be expensive (demanded). Price: {}, Base: {}",
+            water_price,
+            base_water
+        );
+        assert!(
+            food_price > base_food,
+            "Foodstuffs should be expensive (demanded). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+        assert!(
+            medicine_price > base_medicine,
+            "Medicine should be expensive (demanded). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+        assert!(
+            ammo_price > base_ammo,
+            "Ammunition should be expensive (demanded). Price: {}, Base: {}",
+            ammo_price,
+            base_ammo
+        );
+    }
+
+    /// Verify PirateSpaceStation prices: Narcotics/Ammunition cheap, Foodstuffs/Firearms/Medicine expensive
+    /// Per ADR 0005: Pirate Station produces Narcotics, Ammunition; demands Foodstuffs, Firearms, Medicine
+    #[test]
+    fn test_pirate_space_station_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::PirateSpaceStation);
+
+        // Produced commodities (Narcotics, Ammunition) should be cheaper than base
+        let narcotics_price = economy
+            .get_commodity(&CommodityType::Narcotics)
+            .unwrap()
+            .current_price as f64;
+        let ammo_price = economy
+            .get_commodity(&CommodityType::Ammunition)
+            .unwrap()
+            .current_price as f64;
+
+        let base_narcotics = CommodityType::Narcotics.base_value() as f64;
+        let base_ammo = CommodityType::Ammunition.base_value() as f64;
+
+        assert!(
+            narcotics_price < base_narcotics,
+            "Narcotics should be cheap (produced locally). Price: {}, Base: {}",
+            narcotics_price,
+            base_narcotics
+        );
+        assert!(
+            ammo_price < base_ammo,
+            "Ammunition should be cheap (produced locally). Price: {}, Base: {}",
+            ammo_price,
+            base_ammo
+        );
+
+        // Demanded commodities (Foodstuffs, Firearms, Medicine) should be more expensive than base
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+        let firearms_price = economy
+            .get_commodity(&CommodityType::Firearms)
+            .unwrap()
+            .current_price as f64;
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+        let base_firearms = CommodityType::Firearms.base_value() as f64;
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+
+        assert!(
+            food_price > base_food,
+            "Foodstuffs should be expensive (demanded). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+        assert!(
+            firearms_price > base_firearms,
+            "Firearms should be expensive (demanded). Price: {}, Base: {}",
+            firearms_price,
+            base_firearms
+        );
+        assert!(
+            medicine_price > base_medicine,
+            "Medicine should be expensive (demanded). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+    }
+
+    /// Verify ResearchOutpost prices: Electronics/Medicine/AlienArtefacts cheap, Water/Foodstuffs expensive
+    /// Per ADR 0005: Research Outpost produces Electronics, Medicine, AlienArtefacts; demands Water, Foodstuffs
+    #[test]
+    fn test_research_outpost_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::ResearchOutpost);
+
+        // Produced commodities (Electronics, Medicine, AlienArtefacts) should be cheaper than base
+        let electronics_price = economy
+            .get_commodity(&CommodityType::Electronics)
+            .unwrap()
+            .current_price as f64;
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+        let alien_artefacts_price = economy
+            .get_commodity(&CommodityType::AlienArtefacts)
+            .unwrap()
+            .current_price as f64;
+
+        let base_electronics = CommodityType::Electronics.base_value() as f64;
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+        let base_alien = CommodityType::AlienArtefacts.base_value() as f64;
+
+        assert!(
+            electronics_price < base_electronics,
+            "Electronics should be cheap (produced locally). Price: {}, Base: {}",
+            electronics_price,
+            base_electronics
+        );
+        assert!(
+            medicine_price < base_medicine,
+            "Medicine should be cheap (produced locally). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+        assert!(
+            alien_artefacts_price < base_alien,
+            "AlienArtefacts should be cheap (produced locally). Price: {}, Base: {}",
+            alien_artefacts_price,
+            base_alien
+        );
+
+        // Demanded commodities (Water, Foodstuffs) should be more expensive than base
+        let water_price = economy
+            .get_commodity(&CommodityType::Water)
+            .unwrap()
+            .current_price as f64;
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+
+        let base_water = CommodityType::Water.base_value() as f64;
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+
+        assert!(
+            water_price > base_water,
+            "Water should be expensive (demanded). Price: {}, Base: {}",
+            water_price,
+            base_water
+        );
+        assert!(
+            food_price > base_food,
+            "Foodstuffs should be expensive (demanded). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+    }
+
+    /// Verify Industrial planet prices: Electronics/Metals/Ammunition/Antimatter cheap, Water/Foodstuffs/Medicine expensive
+    /// Per ADR 0005: Industrial produces Electronics, Metals, Ammunition, Antimatter; demands Water, Foodstuffs, Medicine
+    #[test]
+    fn test_industrial_planet_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::Industrial);
+
+        // Produced commodities (Electronics, Metals, Ammunition, Antimatter) should be cheaper than base
+        let electronics_price = economy
+            .get_commodity(&CommodityType::Electronics)
+            .unwrap()
+            .current_price as f64;
+        let metals_price = economy
+            .get_commodity(&CommodityType::Metals)
+            .unwrap()
+            .current_price as f64;
+        let ammo_price = economy
+            .get_commodity(&CommodityType::Ammunition)
+            .unwrap()
+            .current_price as f64;
+        let antimatter_price = economy
+            .get_commodity(&CommodityType::Antimatter)
+            .unwrap()
+            .current_price as f64;
+
+        let base_electronics = CommodityType::Electronics.base_value() as f64;
+        let base_metals = CommodityType::Metals.base_value() as f64;
+        let base_ammo = CommodityType::Ammunition.base_value() as f64;
+        let base_antimatter = CommodityType::Antimatter.base_value() as f64;
+
+        assert!(
+            electronics_price < base_electronics,
+            "Electronics should be cheap (produced locally). Price: {}, Base: {}",
+            electronics_price,
+            base_electronics
+        );
+        assert!(
+            metals_price < base_metals,
+            "Metals should be cheap (produced locally). Price: {}, Base: {}",
+            metals_price,
+            base_metals
+        );
+        assert!(
+            ammo_price < base_ammo,
+            "Ammunition should be cheap (produced locally). Price: {}, Base: {}",
+            ammo_price,
+            base_ammo
+        );
+        assert!(
+            antimatter_price < base_antimatter,
+            "Antimatter should be cheap (produced locally). Price: {}, Base: {}",
+            antimatter_price,
+            base_antimatter
+        );
+
+        // Demanded commodities (Water, Foodstuffs, Medicine) should be more expensive than base
+        let water_price = economy
+            .get_commodity(&CommodityType::Water)
+            .unwrap()
+            .current_price as f64;
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+
+        let base_water = CommodityType::Water.base_value() as f64;
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+
+        assert!(
+            water_price > base_water,
+            "Water should be expensive (demanded). Price: {}, Base: {}",
+            water_price,
+            base_water
+        );
+        assert!(
+            food_price > base_food,
+            "Foodstuffs should be expensive (demanded). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+        assert!(
+            medicine_price > base_medicine,
+            "Medicine should be expensive (demanded). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+    }
+
+    /// Verify Frontier Colony prices: Water/Foodstuffs cheap, everything else expensive
+    /// Per ADR 0005: Frontier Colony produces Water, Foodstuffs; demands everything except Narcotics
+    #[test]
+    fn test_frontier_colony_pricing() {
+        let economy = PlanetEconomy::new(PlanetType::FrontierColony);
+
+        // Produced commodities (Water, Foodstuffs) should be cheaper than base
+        let water_price = economy
+            .get_commodity(&CommodityType::Water)
+            .unwrap()
+            .current_price as f64;
+        let food_price = economy
+            .get_commodity(&CommodityType::Foodstuffs)
+            .unwrap()
+            .current_price as f64;
+
+        let base_water = CommodityType::Water.base_value() as f64;
+        let base_food = CommodityType::Foodstuffs.base_value() as f64;
+
+        assert!(
+            water_price < base_water,
+            "Water should be cheap (produced locally). Price: {}, Base: {}",
+            water_price,
+            base_water
+        );
+        assert!(
+            food_price < base_food,
+            "Foodstuffs should be cheap (produced locally). Price: {}, Base: {}",
+            food_price,
+            base_food
+        );
+
+        // Demanded commodities should be more expensive than base
+        // Frontier Colony demands: Medicine, Firearms, Ammunition, Electronics, Metals, Antimatter, AlienArtefacts
+        let medicine_price = economy
+            .get_commodity(&CommodityType::Medicine)
+            .unwrap()
+            .current_price as f64;
+        let firearms_price = economy
+            .get_commodity(&CommodityType::Firearms)
+            .unwrap()
+            .current_price as f64;
+        let ammo_price = economy
+            .get_commodity(&CommodityType::Ammunition)
+            .unwrap()
+            .current_price as f64;
+        let electronics_price = economy
+            .get_commodity(&CommodityType::Electronics)
+            .unwrap()
+            .current_price as f64;
+        let metals_price = economy
+            .get_commodity(&CommodityType::Metals)
+            .unwrap()
+            .current_price as f64;
+        let antimatter_price = economy
+            .get_commodity(&CommodityType::Antimatter)
+            .unwrap()
+            .current_price as f64;
+        let alien_price = economy
+            .get_commodity(&CommodityType::AlienArtefacts)
+            .unwrap()
+            .current_price as f64;
+
+        let base_medicine = CommodityType::Medicine.base_value() as f64;
+        let base_firearms = CommodityType::Firearms.base_value() as f64;
+        let base_ammo = CommodityType::Ammunition.base_value() as f64;
+        let base_electronics = CommodityType::Electronics.base_value() as f64;
+        let base_metals = CommodityType::Metals.base_value() as f64;
+        let base_antimatter = CommodityType::Antimatter.base_value() as f64;
+        let base_alien = CommodityType::AlienArtefacts.base_value() as f64;
+
+        assert!(
+            medicine_price > base_medicine,
+            "Medicine should be expensive (demanded). Price: {}, Base: {}",
+            medicine_price,
+            base_medicine
+        );
+        assert!(
+            firearms_price > base_firearms,
+            "Firearms should be expensive (demanded). Price: {}, Base: {}",
+            firearms_price,
+            base_firearms
+        );
+        assert!(
+            ammo_price > base_ammo,
+            "Ammunition should be expensive (demanded). Price: {}, Base: {}",
+            ammo_price,
+            base_ammo
+        );
+        assert!(
+            electronics_price > base_electronics,
+            "Electronics should be expensive (demanded). Price: {}, Base: {}",
+            electronics_price,
+            base_electronics
+        );
+        assert!(
+            metals_price > base_metals,
+            "Metals should be expensive (demanded). Price: {}, Base: {}",
+            metals_price,
+            base_metals
+        );
+        assert!(
+            antimatter_price > base_antimatter,
+            "Antimatter should be expensive (demanded). Price: {}, Base: {}",
+            antimatter_price,
+            base_antimatter
+        );
+        assert!(
+            alien_price > base_alien,
+            "AlienArtefacts should be expensive (demanded). Price: {}, Base: {}",
+            alien_price,
+            base_alien
+        );
+    }
+
+    // ============================================================================
+    // Test 8: Verify buy/sell operations work at each planet type
+    // ============================================================================
+
+    /// Test buy operation works at Agricultural planet
+    #[test]
+    fn test_buy_operation_at_agricultural_planet() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let mut world = World {
+            planets: vec![Planet {
+                id: "earth".to_string(),
+                name: "Earth".to_string(),
+                orbit_radius: 5,
+                orbit_period: 10,
+                position: Position::new(0),
+                economy: PlanetEconomy::new(PlanetType::Agricultural),
+                planet_type: PlanetType::Agricultural,
+            }],
+            current_time: 0.0,
+            player: crate::player::Player {
+                money: 1000,
+                location: "earth".to_string(),
+                ship: Ship::new(0.5, 50),
+                inventory: CargoHold::new(50),
+            },
+            game_clock: GameClock {
+                current_turn: 1,
+                total_turns: 100,
+            },
+        };
+
+        // Buy Water (cheap at Agricultural)
+        let result = crate::player::actions::handle_buy(&mut world, "water", 10);
+        assert!(
+            result.is_ok(),
+            "Buy operation should succeed: {:?}",
+            result.err()
+        );
+        assert_eq!(
+            world
+                .player
+                .inventory
+                .get_commodity_quantity(&CommodityType::Water),
+            10
+        );
+    }
+
+    /// Test sell operation works at Agricultural planet
+    #[test]
+    fn test_sell_operation_at_agricultural_planet() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let initial_money = 1000u32;
+        let mut world = World {
+            planets: vec![Planet {
+                id: "earth".to_string(),
+                name: "Earth".to_string(),
+                orbit_radius: 5,
+                orbit_period: 10,
+                position: Position::new(0),
+                economy: PlanetEconomy::new(PlanetType::Agricultural),
+                planet_type: PlanetType::Agricultural,
+            }],
+            current_time: 0.0,
+            player: crate::player::Player {
+                money: initial_money,
+                location: "earth".to_string(),
+                ship: Ship::new(0.5, 50),
+                inventory: CargoHold::new(50),
+            },
+            game_clock: GameClock {
+                current_turn: 1,
+                total_turns: 100,
+            },
+        };
+
+        // Add Medicine to inventory first (expensive at Agricultural, good to sell)
+        world
+            .player
+            .inventory
+            .add_commodity(CommodityType::Medicine, 10)
+            .unwrap();
+
+        // Sell Medicine
+        let result = crate::player::actions::handle_sell(&mut world, "medicine", 5);
+        assert!(
+            result.is_ok(),
+            "Sell operation should succeed: {:?}",
+            result.err()
+        );
+        assert_eq!(
+            world
+                .player
+                .inventory
+                .get_commodity_quantity(&CommodityType::Medicine),
+            5
+        );
+        assert!(
+            world.player.money > initial_money,
+            "Player should have earned money from sale"
+        );
+    }
+
+    /// Test buy/sell operations work at all 7 planet types
+    #[test]
+    fn test_buy_sell_operations_all_planet_types() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let planet_types = vec![
+            PlanetType::Agricultural,
+            PlanetType::MegaCity,
+            PlanetType::Mining,
+            PlanetType::PirateSpaceStation,
+            PlanetType::ResearchOutpost,
+            PlanetType::Industrial,
+            PlanetType::FrontierColony,
+        ];
+
+        for planet_type in planet_types {
+            let planet_id = format!("{:?}", planet_type).to_lowercase();
+
+            // Test buy
+            let mut world = World {
+                planets: vec![Planet {
+                    id: planet_id.clone(),
+                    name: planet_id.clone(),
+                    orbit_radius: 5,
+                    orbit_period: 10,
+                    position: Position::new(0),
+                    economy: PlanetEconomy::new(planet_type.clone()),
+                    planet_type: planet_type.clone(),
+                }],
+                current_time: 0.0,
+                player: crate::player::Player {
+                    money: 1000,
+                    location: planet_id.clone(),
+                    ship: Ship::new(0.5, 50),
+                    inventory: CargoHold::new(50),
+                },
+                game_clock: GameClock {
+                    current_turn: 1,
+                    total_turns: 100,
+                },
+            };
+
+            let buy_result = crate::player::actions::handle_buy(&mut world, "water", 5);
+            assert!(
+                buy_result.is_ok(),
+                "Buy should succeed at {:?}: {:?}",
+                planet_type,
+                buy_result.err()
+            );
+
+            // Test sell
+            let sell_result = crate::player::actions::handle_sell(&mut world, "water", 3);
+            assert!(
+                sell_result.is_ok(),
+                "Sell should succeed at {:?}: {:?}",
+                planet_type,
+                sell_result.err()
+            );
+        }
+    }
+
+    // ============================================================================
+    // Test 9: Verify cargo capacity limits are enforced correctly
+    // ============================================================================
+
+    /// Test cargo capacity is enforced when buying
+    #[test]
+    fn test_cargo_capacity_enforced_on_buy() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let mut world = World {
+            planets: vec![Planet {
+                id: "earth".to_string(),
+                name: "Earth".to_string(),
+                orbit_radius: 5,
+                orbit_period: 10,
+                position: Position::new(0),
+                economy: PlanetEconomy::new(PlanetType::Agricultural),
+                planet_type: PlanetType::Agricultural,
+            }],
+            current_time: 0.0,
+            player: crate::player::Player {
+                money: 10000, // Plenty of money
+                location: "earth".to_string(),
+                ship: Ship::new(0.5, 10), // Small cargo capacity
+                inventory: CargoHold::new(10),
+            },
+            game_clock: GameClock {
+                current_turn: 1,
+                total_turns: 100,
+            },
+        };
+
+        // Try to buy more than cargo capacity
+        let result = crate::player::actions::handle_buy(&mut world, "water", 15);
+        assert!(result.is_err(), "Should fail due to cargo capacity");
+        let err_msg = result.unwrap_err();
+        assert!(
+            err_msg.contains("cargo") || err_msg.contains("space"),
+            "Error should mention cargo/space, got: {}",
+            err_msg
+        );
+    }
+
+    /// Test cargo capacity is enforced when buying at exact limit
+    #[test]
+    fn test_cargo_capacity_exact_limit() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let mut world = World {
+            planets: vec![Planet {
+                id: "earth".to_string(),
+                name: "Earth".to_string(),
+                orbit_radius: 5,
+                orbit_period: 10,
+                position: Position::new(0),
+                economy: PlanetEconomy::new(PlanetType::Agricultural),
+                planet_type: PlanetType::Agricultural,
+            }],
+            current_time: 0.0,
+            player: crate::player::Player {
+                money: 10000,
+                location: "earth".to_string(),
+                ship: Ship::new(0.5, 10),
+                inventory: CargoHold::new(10),
+            },
+            game_clock: GameClock {
+                current_turn: 1,
+                total_turns: 100,
+            },
+        };
+
+        // Buy exactly to capacity
+        let result = crate::player::actions::handle_buy(&mut world, "water", 10);
+        assert!(
+            result.is_ok(),
+            "Should succeed when buying exactly to capacity"
+        );
+        assert_eq!(world.player.inventory.remaining_capacity(), 0);
+    }
+
+    /// Test cargo capacity prevents buying when inventory partially full
+    #[test]
+    fn test_cargo_capacity_partial_inventory() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let mut world = World {
+            planets: vec![Planet {
+                id: "earth".to_string(),
+                name: "Earth".to_string(),
+                orbit_radius: 5,
+                orbit_period: 10,
+                position: Position::new(0),
+                economy: PlanetEconomy::new(PlanetType::Agricultural),
+                planet_type: PlanetType::Agricultural,
+            }],
+            current_time: 0.0,
+            player: crate::player::Player {
+                money: 10000,
+                location: "earth".to_string(),
+                ship: Ship::new(0.5, 10),
+                inventory: CargoHold::new(10),
+            },
+            game_clock: GameClock {
+                current_turn: 1,
+                total_turns: 100,
+            },
+        };
+
+        // Add some cargo first
+        world
+            .player
+            .inventory
+            .add_commodity(CommodityType::Foodstuffs, 7)
+            .unwrap();
+        assert_eq!(world.player.inventory.remaining_capacity(), 3);
+
+        // Try to buy more than remaining capacity
+        let result = crate::player::actions::handle_buy(&mut world, "water", 5);
+        assert!(result.is_err(), "Should fail due to cargo capacity");
+    }
+
+    /// Test cargo capacity is enforced at all planet types
+    #[test]
+    fn test_cargo_capacity_all_planet_types() {
+        use crate::game_state::GameClock;
+        use crate::player::inventory::CargoHold;
+        use crate::player::ship::Ship;
+        use crate::setup::World;
+        use crate::simulation::orbits::{Planet, Position};
+
+        let planet_types = vec![
+            PlanetType::Agricultural,
+            PlanetType::MegaCity,
+            PlanetType::Mining,
+            PlanetType::PirateSpaceStation,
+            PlanetType::ResearchOutpost,
+            PlanetType::Industrial,
+            PlanetType::FrontierColony,
+        ];
+
+        for planet_type in planet_types {
+            let planet_id = format!("{:?}", planet_type).to_lowercase();
+
+            let mut world = World {
+                planets: vec![Planet {
+                    id: planet_id.clone(),
+                    name: planet_id.clone(),
+                    orbit_radius: 5,
+                    orbit_period: 10,
+                    position: Position::new(0),
+                    economy: PlanetEconomy::new(planet_type.clone()),
+                    planet_type: planet_type.clone(),
+                }],
+                current_time: 0.0,
+                player: crate::player::Player {
+                    money: 10000,
+                    location: planet_id.clone(),
+                    ship: Ship::new(0.5, 5), // Very small capacity
+                    inventory: CargoHold::new(5),
+                },
+                game_clock: GameClock {
+                    current_turn: 1,
+                    total_turns: 100,
+                },
+            };
+
+            // Try to overbuy
+            let result = crate::player::actions::handle_buy(&mut world, "water", 10);
+            assert!(
+                result.is_err(),
+                "Should fail at {:?} due to cargo capacity",
+                planet_type
+            );
+        }
+    }
 }
