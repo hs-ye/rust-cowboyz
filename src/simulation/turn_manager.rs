@@ -5,11 +5,12 @@
 //! all game systems (planets, markets, etc.) are updated consistently.
 
 use crate::game_state::GameClock;
-use crate::simulation::orbits::{self, Planet};
 use crate::simulation::economy::MarketManager;
+use crate::simulation::orbits::{self, Planet};
 
 /// Result of advancing the game state by one or more turns
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct TurnAdvanceResult {
     pub turns_advanced: u32,
     pub new_turn: u32,
@@ -43,13 +44,14 @@ impl TurnAdvanceResult {
 /// Manages turn-based advancement of all game systems
 pub struct TurnManager;
 
+#[allow(dead_code)]
 impl TurnManager {
     /// Advance the game by a specified number of turns
     /// This updates:
     /// - Game clock
     /// - Planet orbital positions
     /// - Market prices
-    /// 
+    ///
     /// Returns the result of the turn advancement
     pub fn advance_turns(
         planets: &mut [Planet],
@@ -58,14 +60,22 @@ impl TurnManager {
         turns: u32,
     ) -> TurnAdvanceResult {
         if turns == 0 {
-            return TurnAdvanceResult::no_changes(0, game_clock.current_turn, game_clock.is_game_over());
+            return TurnAdvanceResult::no_changes(
+                0,
+                game_clock.current_turn,
+                game_clock.is_game_over(),
+            );
         }
 
         // Advance the game clock
         let actual_turns = game_clock.advance(turns);
-        
+
         if actual_turns == 0 {
-            return TurnAdvanceResult::no_changes(0, game_clock.current_turn, game_clock.is_game_over());
+            return TurnAdvanceResult::no_changes(
+                0,
+                game_clock.current_turn,
+                game_clock.is_game_over(),
+            );
         }
 
         // Advance planet orbital positions for each turn
@@ -98,11 +108,7 @@ impl TurnManager {
 
     /// Calculate travel time and return the result without actually advancing
     /// This is useful for displaying travel options to the player
-    pub fn preview_travel(
-        departure: &Planet,
-        destination: &Planet,
-        ship_acceleration: u32,
-    ) -> u32 {
+    pub fn preview_travel(departure: &Planet, destination: &Planet, ship_acceleration: u32) -> u32 {
         crate::simulation::travel::calculate_travel_turns(departure, destination, ship_acceleration)
     }
 
@@ -139,6 +145,7 @@ mod tests {
         vec![
             Planet {
                 id: "earth".to_string(),
+                name: "Earth".to_string(),
                 orbit_radius: 5,
                 orbit_period: 10,
                 position: Position::new(0),
@@ -151,6 +158,7 @@ mod tests {
             },
             Planet {
                 id: "mars".to_string(),
+                name: "Mars".to_string(),
                 orbit_radius: 12,
                 orbit_period: 15,
                 position: Position::new(7),
@@ -168,11 +176,11 @@ mod tests {
     fn test_advance_turns() {
         let mut planets = create_test_planets();
         let mut game_clock = GameClock::new(20);
-        
+
         let initial_turn = game_clock.current_turn;
-        
+
         let result = TurnManager::advance_turns(&mut planets, None, &mut game_clock, 5);
-        
+
         assert_eq!(result.turns_advanced, 5);
         assert_eq!(game_clock.current_turn, initial_turn + 5);
         assert!(result.planet_positions_updated);
@@ -182,15 +190,15 @@ mod tests {
     fn test_advance_turns_planet_positions() {
         let mut planets = create_test_planets();
         let mut game_clock = GameClock::new(20);
-        
+
         // Earth starts at position 0
         assert_eq!(planets[0].position.orbital_position, 0);
         // Mars starts at position 7
         assert_eq!(planets[1].position.orbital_position, 7);
-        
+
         // Advance 3 turns
         TurnManager::advance_turns(&mut planets, None, &mut game_clock, 3);
-        
+
         // Earth: 0 -> 3
         assert_eq!(planets[0].position.orbital_position, 3);
         // Mars: 7 -> 10, wraps around (period 15)
@@ -201,9 +209,9 @@ mod tests {
     fn test_advance_single_turn() {
         let mut planets = create_test_planets();
         let mut game_clock = GameClock::new(20);
-        
+
         let result = TurnManager::advance_single_turn(&mut planets, None, &mut game_clock);
-        
+
         assert_eq!(result.turns_advanced, 1);
         assert_eq!(game_clock.current_turn, 2);
     }
@@ -212,9 +220,9 @@ mod tests {
     fn test_advance_zero_turns() {
         let mut planets = create_test_planets();
         let mut game_clock = GameClock::new(20);
-        
+
         let result = TurnManager::advance_turns(&mut planets, None, &mut game_clock, 0);
-        
+
         assert_eq!(result.turns_advanced, 0);
         assert!(!result.planet_positions_updated);
         assert!(!result.markets_updated);
@@ -224,9 +232,9 @@ mod tests {
     fn test_advance_caps_at_total_turns() {
         let mut planets = create_test_planets();
         let mut game_clock = GameClock::with_start_turn(18, 20);
-        
+
         let result = TurnManager::advance_turns(&mut planets, None, &mut game_clock, 10);
-        
+
         assert_eq!(result.turns_advanced, 2); // Only 2 turns remaining
         assert_eq!(game_clock.current_turn, 20);
         assert!(result.is_game_over);
@@ -236,7 +244,7 @@ mod tests {
     fn test_preview_travel() {
         let planets = create_test_planets();
         let travel_time = TurnManager::preview_travel(&planets[0], &planets[1], 1);
-        
+
         // Base distance = |12 - 5| = 7
         // Travel time = 2 * sqrt(7/1) = 5.29... → ceil = 6
         assert_eq!(travel_time, 6);
@@ -246,7 +254,7 @@ mod tests {
     fn test_is_game_over() {
         let mut game_clock = GameClock::new(10);
         assert!(!TurnManager::is_game_over(&game_clock));
-        
+
         game_clock.advance(10);
         assert!(TurnManager::is_game_over(&game_clock));
     }
@@ -255,7 +263,7 @@ mod tests {
     fn test_turns_remaining() {
         let mut game_clock = GameClock::new(20);
         assert_eq!(TurnManager::turns_remaining(&game_clock), 19);
-        
+
         game_clock.advance(5);
         assert_eq!(TurnManager::turns_remaining(&game_clock), 14);
     }

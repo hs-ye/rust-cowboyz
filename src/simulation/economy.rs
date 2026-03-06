@@ -31,9 +31,9 @@ impl PriceVolatility {
     /// Returns a multiplier range (e.g., 0.9 to 1.1 for 10% fluctuation)
     pub fn fluctuation_range(&self) -> (f64, f64) {
         match self {
-            PriceVolatility::Low => (0.95, 1.05),      // ±5%
-            PriceVolatility::Medium => (0.85, 1.15),   // ±15%
-            PriceVolatility::High => (0.70, 1.30),     // ±30%
+            PriceVolatility::Low => (0.95, 1.05),    // ±5%
+            PriceVolatility::Medium => (0.85, 1.15), // ±15%
+            PriceVolatility::High => (0.70, 1.30),   // ±30%
         }
     }
 }
@@ -44,18 +44,18 @@ impl PriceVolatility {
 /// Current Price = Base Price × Local Multiplier × Supply Factor × Demand Factor
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarketGood {
-    pub commodity_type: CommodityType,  // The commodity type this market entry represents
-    pub base_price: u32,                // Base price from commodity definition
-    pub current_price: u32,             // Current calculated price
-    pub buy_price: u32,                 // Price at which the market buys from the player
-    pub sell_price: u32,                // Price at which the market sells to the player
-    pub supply_factor: f64,             // Supply factor (0.5 = scarce, 1.0 = normal, 2.0 = oversupplied)
-    pub demand_factor: f64,             // Demand factor (0.5 = low demand, 1.0 = normal, 2.0 = high demand)
-    pub local_multiplier: f64,          // Local multiplier based on planet type
-    pub is_produced: bool,              // Flag to indicate if this commodity is produced on the planet
-    pub is_demanded: bool,              // Flag to indicate if this commodity is demanded by the planet
-    pub recent_trade_volume: i32,       // Track recent trades for market impact
-    pub price_history: Vec<u32>,        // Track price history for analysis
+    pub commodity_type: CommodityType, // The commodity type this market entry represents
+    pub base_price: u32,               // Base price from commodity definition
+    pub current_price: u32,            // Current calculated price
+    pub buy_price: u32,                // Price at which the market buys from the player
+    pub sell_price: u32,               // Price at which the market sells to the player
+    pub supply_factor: f64, // Supply factor (0.5 = scarce, 1.0 = normal, 2.0 = oversupplied)
+    pub demand_factor: f64, // Demand factor (0.5 = low demand, 1.0 = normal, 2.0 = high demand)
+    pub local_multiplier: f64, // Local multiplier based on planet type
+    pub is_produced: bool,  // Flag to indicate if this commodity is produced on the planet
+    pub is_demanded: bool,  // Flag to indicate if this commodity is demanded by the planet
+    pub recent_trade_volume: i32, // Track recent trades for market impact
+    pub price_history: Vec<u32>, // Track price history for analysis
 }
 
 impl MarketGood {
@@ -72,7 +72,8 @@ impl MarketGood {
         let local_multiplier = calculate_local_multiplier(planet_type, commodity_type);
 
         // Calculate initial supply and demand factors
-        let (supply_factor, demand_factor) = calculate_initial_factors(commodity_type, is_produced, is_demanded);
+        let (supply_factor, demand_factor) =
+            calculate_initial_factors(commodity_type, is_produced, is_demanded);
 
         let mut market_good = Self {
             commodity_type: commodity_type.clone(),
@@ -88,17 +89,17 @@ impl MarketGood {
             recent_trade_volume: 0,
             price_history: Vec::new(),
         };
-        
+
         // Calculate initial prices
         market_good.calculate_prices();
         market_good.price_history.push(market_good.current_price);
-        
+
         market_good
     }
 
     /// Calculate prices using the dynamic pricing formula:
     /// Current Price = Base Price × Local Multiplier × (1/Supply Factor) × Demand Factor
-    /// 
+    ///
     /// Note: Supply Factor is inverted so that higher supply = lower price
     ///       Demand Factor is direct so that higher demand = higher price
     pub fn calculate_prices(&mut self) {
@@ -107,17 +108,17 @@ impl MarketGood {
         let local_mult = self.local_multiplier;
         let supply_fact = self.supply_factor;
         let demand_fact = self.demand_factor;
-        
+
         // Calculate current price
         // Use 1/supply_factor so that higher supply = lower price
         let calculated_price = base * local_mult * (1.0 / supply_fact) * demand_fact;
         self.current_price = calculated_price.round().max(1.0) as u32;
-        
+
         // Buy price is slightly lower (market buys from player at discount)
         self.buy_price = (self.current_price as f64 * 0.95).round() as u32;
         // Sell price is the current price (market sells to player at market rate)
         self.sell_price = self.current_price;
-        
+
         // Ensure buy price is always less than sell price
         if self.buy_price >= self.sell_price {
             self.buy_price = self.sell_price.saturating_sub(1);
@@ -148,7 +149,7 @@ impl MarketGood {
         // Demand increases when player buys, decreases when player sells
         let adjustment = (quantity as f64) * 0.05; // 5% change per unit traded
         self.demand_factor = (self.demand_factor + adjustment).clamp(0.5, 2.0);
-        
+
         self.calculate_prices();
     }
 
@@ -156,22 +157,22 @@ impl MarketGood {
     pub fn apply_natural_fluctuation(&mut self) {
         let volatility = PriceVolatility::from_risk_level(&self.commodity_type.risk_level());
         let (min_mult, max_mult) = volatility.fluctuation_range();
-        
+
         // Apply a small random fluctuation
         let fluctuation = min_mult + (max_mult - min_mult) * rand_f64();
-        
+
         // Apply to both supply and demand factors
         self.supply_factor = (self.supply_factor * fluctuation).clamp(0.5, 2.0);
         self.demand_factor = (self.demand_factor / fluctuation).clamp(0.5, 2.0);
-        
+
         self.calculate_prices();
-        
+
         // Record price in history
         self.price_history.push(self.current_price);
         if self.price_history.len() > 20 {
             self.price_history.remove(0);
         }
-        
+
         // Reset trade volume after fluctuation
         self.recent_trade_volume = 0;
     }
@@ -181,28 +182,28 @@ impl MarketGood {
         match event {
             MarketEvent::SupplySurge => {
                 self.supply_factor = (self.supply_factor * 1.5).min(2.0);
-            },
+            }
             MarketEvent::SupplyShortage => {
                 self.supply_factor = (self.supply_factor * 0.5).max(0.5);
-            },
+            }
             MarketEvent::DemandSurge => {
                 self.demand_factor = (self.demand_factor * 1.5).min(2.0);
-            },
+            }
             MarketEvent::DemandDrop => {
                 self.demand_factor = (self.demand_factor * 0.5).max(0.5);
-            },
+            }
             MarketEvent::PriceSpike => {
                 // Both high demand and low supply
                 self.supply_factor = (self.supply_factor * 0.6).max(0.5);
                 self.demand_factor = (self.demand_factor * 1.4).min(2.0);
-            },
+            }
             MarketEvent::MarketCrash => {
                 // Both low demand and high supply
                 self.supply_factor = (self.supply_factor * 1.5).min(2.0);
                 self.demand_factor = (self.demand_factor * 0.6).max(0.5);
-            },
+            }
         }
-        
+
         self.calculate_prices();
         self.price_history.push(self.current_price);
         if self.price_history.len() > 20 {
@@ -215,22 +216,28 @@ impl MarketGood {
         if self.price_history.len() < 2 {
             return 0.0;
         }
-        
-        let recent: Vec<f64> = self.price_history.iter().rev().take(5).map(|&p| p as f64).collect();
+
+        let recent: Vec<f64> = self
+            .price_history
+            .iter()
+            .rev()
+            .take(5)
+            .map(|&p| p as f64)
+            .collect();
         if recent.len() < 2 {
             return 0.0;
         }
-        
+
         let first = recent.last().unwrap();
         let last = recent.first().unwrap();
-        
+
         (last - first) / first
     }
 
     /// Check if current price is significantly above or below base price
     pub fn is_price_anomaly(&self) -> Option<PriceAnomaly> {
         let ratio = self.current_price as f64 / self.base_price as f64;
-        
+
         if ratio > 1.5 {
             Some(PriceAnomaly::High)
         } else if ratio < 0.67 {
@@ -271,15 +278,15 @@ impl MarketEvent {
     /// Get a random market event (weighted by rarity)
     pub fn random() -> Option<Self> {
         let roll = rand_f64();
-        
+
         // 10% chance of a random event occurring
         if roll > 0.10 {
             return None;
         }
-        
+
         // Choose event based on weighted probability
         let event_roll = rand_f64();
-        
+
         Some(if event_roll < 0.15 {
             MarketEvent::SupplySurge
         } else if event_roll < 0.30 {
@@ -294,7 +301,7 @@ impl MarketEvent {
             MarketEvent::MarketCrash
         })
     }
-    
+
     /// Get the display name for this event
     pub fn display_name(&self) -> &'static str {
         match self {
@@ -306,16 +313,26 @@ impl MarketEvent {
             MarketEvent::MarketCrash => "Market Crash",
         }
     }
-    
+
     /// Get a description of this event
     pub fn description(&self) -> &'static str {
         match self {
-            MarketEvent::SupplySurge => "A sudden influx of goods has flooded the market, driving prices down.",
-            MarketEvent::SupplyShortage => "Supply has been disrupted, creating scarcity and driving prices up.",
+            MarketEvent::SupplySurge => {
+                "A sudden influx of goods has flooded the market, driving prices down."
+            }
+            MarketEvent::SupplyShortage => {
+                "Supply has been disrupted, creating scarcity and driving prices up."
+            }
             MarketEvent::DemandSurge => "Unexpected demand has surged, pushing prices higher.",
-            MarketEvent::DemandDrop => "Demand has collapsed, leaving sellers struggling to find buyers.",
-            MarketEvent::PriceSpike => "Extraordinary circumstances have created a major price spike!",
-            MarketEvent::MarketCrash => "The market has crashed! Prices have plummeted due to oversupply.",
+            MarketEvent::DemandDrop => {
+                "Demand has collapsed, leaving sellers struggling to find buyers."
+            }
+            MarketEvent::PriceSpike => {
+                "Extraordinary circumstances have created a major price spike!"
+            }
+            MarketEvent::MarketCrash => {
+                "The market has crashed! Prices have plummeted due to oversupply."
+            }
         }
     }
 }
@@ -324,7 +341,7 @@ impl MarketEvent {
 fn calculate_local_multiplier(planet_type: &PlanetType, commodity: &CommodityType) -> f64 {
     let supplies = planet_type.supplies();
     let demands = planet_type.demands();
-    
+
     if supplies.contains(commodity) {
         // Produced locally - lower price (abundant supply)
         0.7
@@ -338,7 +355,11 @@ fn calculate_local_multiplier(planet_type: &PlanetType, commodity: &CommodityTyp
 }
 
 /// Calculate initial supply and demand factors based on planet type
-fn calculate_initial_factors(_commodity: &CommodityType, is_produced: bool, is_demanded: bool) -> (f64, f64) {
+fn calculate_initial_factors(
+    _commodity: &CommodityType,
+    is_produced: bool,
+    is_demanded: bool,
+) -> (f64, f64) {
     let supply_factor = if is_produced {
         // Local production means higher supply
         1.3
@@ -346,7 +367,7 @@ fn calculate_initial_factors(_commodity: &CommodityType, is_produced: bool, is_d
         // Need to import - lower supply
         0.8
     };
-    
+
     let demand_factor = if is_demanded {
         // Local demand means higher demand
         1.3
@@ -354,7 +375,7 @@ fn calculate_initial_factors(_commodity: &CommodityType, is_produced: bool, is_d
         // No local demand - lower demand
         0.8
     };
-    
+
     (supply_factor, demand_factor)
 }
 
@@ -427,14 +448,21 @@ impl PlanetEconomy {
 
     /// Get all commodities that are neither produced nor demanded
     pub fn ignored_commodities(&self) -> Vec<&MarketGood> {
-        self.market.values().filter(|mg| !mg.is_produced && !mg.is_demanded).collect()
+        self.market
+            .values()
+            .filter(|mg| !mg.is_produced && !mg.is_demanded)
+            .collect()
     }
 
     /// Process a player trade (buy or sell)
-    pub fn process_trade(&mut self, commodity_type: &CommodityType, quantity: i32) -> Result<(), &'static str> {
+    pub fn process_trade(
+        &mut self,
+        commodity_type: &CommodityType,
+        quantity: i32,
+    ) -> Result<(), &'static str> {
         // Positive quantity = player sells to market (increases supply, decreases demand)
         // Negative quantity = player buys from market (decreases supply, increases demand)
-        
+
         if let Some(market_good) = self.market.get_mut(commodity_type) {
             if quantity > 0 {
                 market_good.adjust_supply_from_trade(quantity);
@@ -453,7 +481,7 @@ impl PlanetEconomy {
         for market_good in self.market.values_mut() {
             market_good.apply_natural_fluctuation();
         }
-        
+
         // Clear old events
         self.active_events.clear();
 
@@ -461,11 +489,12 @@ impl PlanetEconomy {
         if let Some(event) = MarketEvent::random() {
             // Apply event to a random commodity
             let commodities: Vec<CommodityType> = self.market.keys().cloned().collect();
-            if let Some(commodity) = commodities.get((rand_f64() * commodities.len() as f64) as usize) {
-                if let Some(market_good) = self.market.get_mut(commodity) {
-                    market_good.apply_random_event(&event);
-                    self.active_events.push(event);
-                }
+            if let Some(commodity) =
+                commodities.get((rand_f64() * commodities.len() as f64) as usize)
+                && let Some(market_good) = self.market.get_mut(commodity)
+            {
+                market_good.apply_random_event(&event);
+                self.active_events.push(event);
             }
         }
     }
@@ -474,7 +503,7 @@ impl PlanetEconomy {
     /// Returns a list of (commodity, profit potential) sorted by profit potential
     pub fn get_profitable_trades(&self) -> Vec<(&CommodityType, f64)> {
         let mut trades: Vec<(&CommodityType, f64)> = Vec::new();
-        
+
         for (commodity_type, market_good) in &self.market {
             // Calculate profit potential based on price anomaly
             if let Some(anomaly) = market_good.is_price_anomaly() {
@@ -485,7 +514,7 @@ impl PlanetEconomy {
                 trades.push((commodity_type, profit_potential));
             }
         }
-        
+
         // Sort by profit potential descending
         trades.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         trades
@@ -496,7 +525,7 @@ impl PlanetEconomy {
         let mut produced = Vec::new();
         let mut demanded = Vec::new();
         let mut ignored = Vec::new();
-        
+
         for (commodity_type, market_good) in &self.market {
             let info = CommodityMarketInfo {
                 commodity_type: commodity_type.clone(),
@@ -505,7 +534,7 @@ impl PlanetEconomy {
                 price_trend: market_good.get_price_trend(),
                 is_anomaly: market_good.is_price_anomaly(),
             };
-            
+
             if market_good.is_produced {
                 produced.push(info);
             } else if market_good.is_demanded {
@@ -514,7 +543,7 @@ impl PlanetEconomy {
                 ignored.push(info);
             }
         }
-        
+
         MarketSummary {
             planet_type: self.planet_type.clone(),
             produced,
@@ -551,6 +580,7 @@ pub struct MarketManager {
     pub economies: HashMap<String, PlanetEconomy>,
 }
 
+#[allow(dead_code)]
 impl MarketManager {
     /// Create a new market manager
     pub fn new() -> Self {
@@ -587,13 +617,13 @@ impl MarketManager {
     pub fn find_best_trade_route(&self) -> Option<(String, String, CommodityType, i32)> {
         let mut best_route: Option<(String, String, CommodityType, i32)> = None;
         let mut best_profit = 0;
-        
+
         for (planet_id_buy, buy_economy) in &self.economies {
             for (planet_id_sell, sell_economy) in &self.economies {
                 if planet_id_buy == planet_id_sell {
                     continue;
                 }
-                
+
                 for commodity_type in CommodityType::all() {
                     if let (Some(buy_price), Some(sell_price)) = (
                         buy_economy.get_sell_price(&commodity_type),
@@ -613,7 +643,7 @@ impl MarketManager {
                 }
             }
         }
-        
+
         best_route
     }
 }
@@ -708,7 +738,9 @@ mod tests {
         let initial_electronics = economy.get_commodity(&CommodityType::Electronics).unwrap();
         let initial_price = initial_electronics.current_price;
 
-        economy.process_trade(&CommodityType::Electronics, 50).unwrap();
+        economy
+            .process_trade(&CommodityType::Electronics, 50)
+            .unwrap();
 
         let after_electronics = economy.get_commodity(&CommodityType::Electronics).unwrap();
         // Supply increased significantly, so price should decrease
@@ -739,7 +771,8 @@ mod tests {
 
     #[test]
     fn test_price_anomaly_detection() {
-        let mut market_good = MarketGood::new(&CommodityType::Narcotics, &PlanetType::PirateSpaceStation);
+        let mut market_good =
+            MarketGood::new(&CommodityType::Narcotics, &PlanetType::PirateSpaceStation);
 
         // Force extreme supply/demand for testing
         // Set supply very low and demand very high to trigger high price anomaly
@@ -750,48 +783,50 @@ mod tests {
         // With very high demand and very low supply, should have price anomaly (high)
         // Price = base * 0.7 (local_mult) * 0.3 * 3.0 = base * 0.63
         // Actually this would be LOW, not high. Let me fix the test.
-        
+
         // For high price anomaly: low supply AND high demand
         // Let's use different values
         market_good.supply_factor = 0.4; // Low supply
         market_good.demand_factor = 2.5; // High demand
         market_good.calculate_prices();
-        
+
         // With high demand and low supply, price should be significantly higher than base
         // Price = base * 0.7 * 0.4 * 2.5 = base * 0.7
         // That's still low. Let me reconsider the formula.
-        
+
         // The formula is: price = base * local_mult * supply_factor * demand_factor
         // For high price: we need high demand_factor and low supply_factor
         // Let's set supply_factor to minimum (0.5) and demand_factor to maximum (2.0)
-        market_good.supply_factor = 0.5; 
+        market_good.supply_factor = 0.5;
         market_good.demand_factor = 2.5;
         market_good.calculate_prices();
-        
+
         // Price = base * 0.7 * 0.5 * 2.5 = base * 0.875 - still below base
         // The issue is that PirateSpaceStation has local_multiplier = 0.7 for Narcotics (produced)
         // Let me use a different commodity that's not produced locally
-        let mut market_good2 = MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::PirateSpaceStation);
+        let mut market_good2 =
+            MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::PirateSpaceStation);
         // Foodstuffs is demanded (not produced), so local_multiplier = 1.3
         market_good2.supply_factor = 0.5;
         market_good2.demand_factor = 2.5;
         market_good2.calculate_prices();
-        
+
         // Price = base * 1.3 * 0.5 * 2.5 = base * 1.625 - above base!
         assert_eq!(market_good2.is_price_anomaly(), Some(PriceAnomaly::High));
 
         // For low price anomaly: high supply and low demand
-        let mut market_good3 = MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::PirateSpaceStation);
+        let mut market_good3 =
+            MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::PirateSpaceStation);
         market_good3.supply_factor = 2.0;
         market_good3.demand_factor = 0.5;
         market_good3.calculate_prices();
-        
+
         // Price = base * 1.3 * 2.0 * 0.5 = base * 1.3 - still above base
         // Need even more extreme values
         market_good3.supply_factor = 2.0;
         market_good3.demand_factor = 0.3;
         market_good3.calculate_prices();
-        
+
         // Price = base * 1.3 * 2.0 * 0.3 = base * 0.78 - below base
         assert_eq!(market_good3.is_price_anomaly(), Some(PriceAnomaly::Low));
     }
@@ -809,11 +844,19 @@ mod tests {
         assert!(manager.get_economy("mars").is_some());
 
         // Check Agricultural produces Water
-        let earth_water = manager.get_economy("earth").unwrap().get_commodity(&CommodityType::Water).unwrap();
+        let earth_water = manager
+            .get_economy("earth")
+            .unwrap()
+            .get_commodity(&CommodityType::Water)
+            .unwrap();
         assert!(earth_water.is_produced);
 
         // Check Mining produces Metals
-        let mars_metals = manager.get_economy("mars").unwrap().get_commodity(&CommodityType::Metals).unwrap();
+        let mars_metals = manager
+            .get_economy("mars")
+            .unwrap()
+            .get_commodity(&CommodityType::Metals)
+            .unwrap();
         assert!(mars_metals.is_produced);
     }
 
@@ -869,10 +912,10 @@ mod tests {
     #[test]
     fn test_profitable_trades() {
         let economy = PlanetEconomy::new(PlanetType::FrontierColony);
-        
+
         // Frontier colony demands many things, so some should be at high prices
         let trades = economy.get_profitable_trades();
-        
+
         // Should return some trades if there are anomalies
         // (depends on random fluctuations, so may be empty)
         for (commodity, potential) in &trades {
@@ -894,15 +937,16 @@ mod tests {
         // Water is low risk, should have low volatility
         let water_volatility = PriceVolatility::from_risk_level(&CommodityType::Water.risk_level());
         assert_eq!(water_volatility, PriceVolatility::Low);
-        
+
         // Narcotics is high risk, should have high volatility
-        let narcotics_volatility = PriceVolatility::from_risk_level(&CommodityType::Narcotics.risk_level());
+        let narcotics_volatility =
+            PriceVolatility::from_risk_level(&CommodityType::Narcotics.risk_level());
         assert_eq!(narcotics_volatility, PriceVolatility::High);
-        
+
         // Check fluctuation ranges
         let (low_min, low_max) = PriceVolatility::Low.fluctuation_range();
         let (high_min, high_max) = PriceVolatility::High.fluctuation_range();
-        
+
         // High volatility should have wider range
         assert!(high_max - high_min > low_max - low_min);
     }

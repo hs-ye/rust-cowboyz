@@ -1,8 +1,8 @@
 //! Commodity types for the space-western trading game
 //! Based on ADR 0005: Market/Economy System
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Enum representing all commodity types as defined in ADR 0005
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -65,16 +65,26 @@ impl CommodityType {
     /// Get a brief description of the commodity
     pub fn description(&self) -> &'static str {
         match self {
-            CommodityType::Water => "Essential for survival, low value but high demand on dry worlds",
-            CommodityType::Foodstuffs => "Combination of grain, meat, and spices - staple nutrition sources",
+            CommodityType::Water => {
+                "Essential for survival, low value but high demand on dry worlds"
+            }
+            CommodityType::Foodstuffs => {
+                "Combination of grain, meat, and spices - staple nutrition sources"
+            }
             CommodityType::Medicine => "Medical supplies, high value, essential for health",
-            CommodityType::Firearms => "Weapons for protection/offense, high value on dangerous worlds",
+            CommodityType::Firearms => {
+                "Weapons for protection/offense, high value on dangerous worlds"
+            }
             CommodityType::Ammunition => "Weapon accessories, consumed regularly, moderate value",
             CommodityType::Metals => "Raw materials for construction and manufacturing",
             CommodityType::Antimatter => "Advanced raw material for energy production, high value",
-            CommodityType::Electronics => "High-tech components, essential for advanced civilizations",
+            CommodityType::Electronics => {
+                "High-tech components, essential for advanced civilizations"
+            }
             CommodityType::Narcotics => "Illegal substances, high value but risky to trade",
-            CommodityType::AlienArtefacts => "Rare and mysterious items from ancient civilizations, extremely high value and risky to trade",
+            CommodityType::AlienArtefacts => {
+                "Rare and mysterious items from ancient civilizations, extremely high value and risky to trade"
+            }
         }
     }
 
@@ -84,16 +94,16 @@ impl CommodityType {
             // Low-value essentials
             CommodityType::Water => 10,
             CommodityType::Foodstuffs => 20,
-            
+
             // Moderate-value items
             CommodityType::Ammunition => 50,
             CommodityType::Metals => 60,
-            
+
             // Higher-value items
             CommodityType::Medicine => 100,
             CommodityType::Electronics => 120,
             CommodityType::Firearms => 150,
-            
+
             // High-value items
             CommodityType::Antimatter => 300,
             CommodityType::Narcotics => 400,
@@ -105,9 +115,14 @@ impl CommodityType {
     pub fn risk_level(&self) -> RiskLevel {
         match self {
             CommodityType::Water | CommodityType::Foodstuffs => RiskLevel::Low,
-            CommodityType::Ammunition | CommodityType::Metals | CommodityType::Medicine | 
-            CommodityType::Electronics | CommodityType::Firearms => RiskLevel::Medium,
-            CommodityType::Antimatter | CommodityType::Narcotics | CommodityType::AlienArtefacts => RiskLevel::High,
+            CommodityType::Ammunition
+            | CommodityType::Metals
+            | CommodityType::Medicine
+            | CommodityType::Electronics
+            | CommodityType::Firearms => RiskLevel::Medium,
+            CommodityType::Antimatter
+            | CommodityType::Narcotics
+            | CommodityType::AlienArtefacts => RiskLevel::High,
         }
     }
 }
@@ -125,6 +140,7 @@ pub enum RiskLevel {
 
 /// Represents a single unit of a commodity
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Commodity {
     /// The type of commodity
     pub commodity_type: CommodityType,
@@ -134,6 +150,7 @@ pub struct Commodity {
     pub value_per_unit: u32,
 }
 
+#[allow(dead_code)]
 impl Commodity {
     /// Create a new commodity with specified type and quantity
     pub fn new(commodity_type: CommodityType, quantity: u32) -> Self {
@@ -192,10 +209,14 @@ impl CommodityInventory {
     }
 
     /// Add a commodity to inventory
-    pub fn add_commodity(&mut self, commodity_type: CommodityType, quantity: u32) -> Result<(), &'static str> {
+    pub fn add_commodity(
+        &mut self,
+        commodity_type: CommodityType,
+        quantity: u32,
+    ) -> Result<(), &'static str> {
         let current_total = self.total_cargo_space_used();
         let additional_space_needed = quantity * self.unit_size;
-        
+
         if current_total + additional_space_needed > self.max_capacity {
             return Err("Not enough cargo space");
         }
@@ -205,21 +226,25 @@ impl CommodityInventory {
     }
 
     /// Remove a commodity from inventory
-    pub fn remove_commodity(&mut self, commodity_type: &CommodityType, quantity: u32) -> Result<u32, &'static str> {
+    pub fn remove_commodity(
+        &mut self,
+        commodity_type: &CommodityType,
+        quantity: u32,
+    ) -> Result<u32, &'static str> {
         match self.commodities.get_mut(commodity_type) {
             Some(current_qty) => {
                 if *current_qty < quantity {
                     return Err("Not enough of this commodity in inventory");
                 }
-                
+
                 if *current_qty == quantity {
                     self.commodities.remove(commodity_type);
                 } else {
                     *current_qty -= quantity;
                 }
-                
+
                 Ok(quantity)
-            },
+            }
             None => Err("Commodity not found in inventory"),
         }
     }
@@ -236,12 +261,16 @@ impl CommodityInventory {
 
     /// Calculate total cargo space currently used
     pub fn total_cargo_space_used(&self) -> u32 {
-        self.commodities.values().map(|&qty| qty * self.unit_size).sum()
+        self.commodities
+            .values()
+            .map(|&qty| qty * self.unit_size)
+            .sum()
     }
 
     /// Calculate remaining cargo space
     pub fn remaining_cargo_space(&self) -> u32 {
-        self.max_capacity.saturating_sub(self.total_cargo_space_used())
+        self.max_capacity
+            .saturating_sub(self.total_cargo_space_used())
     }
 
     /// List all commodity types currently in inventory
@@ -267,11 +296,17 @@ mod tests {
     #[test]
     fn test_commodity_type_properties() {
         assert_eq!(CommodityType::Water.display_name(), "Water");
-        assert_eq!(CommodityType::Water.description(), "Essential for survival, low value but high demand on dry worlds");
+        assert_eq!(
+            CommodityType::Water.description(),
+            "Essential for survival, low value but high demand on dry worlds"
+        );
         assert_eq!(CommodityType::Water.base_value(), 10);
         assert_eq!(CommodityType::Water.risk_level(), RiskLevel::Low);
 
-        assert_eq!(CommodityType::AlienArtefacts.display_name(), "Alien Artefacts");
+        assert_eq!(
+            CommodityType::AlienArtefacts.display_name(),
+            "Alien Artefacts"
+        );
         assert_eq!(CommodityType::AlienArtefacts.base_value(), 800);
         assert_eq!(CommodityType::AlienArtefacts.risk_level(), RiskLevel::High);
     }
@@ -288,15 +323,15 @@ mod tests {
     #[test]
     fn test_commodity_quantity_operations() {
         let mut medicine = Commodity::new(CommodityType::Medicine, 10);
-        
+
         // Add quantity
         medicine.add_quantity(5);
         assert_eq!(medicine.quantity, 15);
-        
+
         // Remove quantity
         assert_eq!(medicine.remove_quantity(7).unwrap(), 7);
         assert_eq!(medicine.quantity, 8);
-        
+
         // Try to remove more than available
         assert!(medicine.remove_quantity(10).is_err());
     }
@@ -304,15 +339,19 @@ mod tests {
     #[test]
     fn test_commodity_inventory_basic_operations() {
         let mut inventory = CommodityInventory::new(100);
-        
+
         // Add commodities
         assert!(inventory.add_commodity(CommodityType::Water, 10).is_ok());
-        assert!(inventory.add_commodity(CommodityType::Foodstuffs, 5).is_ok());
-        
+        assert!(
+            inventory
+                .add_commodity(CommodityType::Foodstuffs, 5)
+                .is_ok()
+        );
+
         // Check quantities
         assert_eq!(inventory.get_quantity(&CommodityType::Water), 10);
         assert_eq!(inventory.get_quantity(&CommodityType::Foodstuffs), 5);
-        
+
         // Check cargo space
         assert_eq!(inventory.total_cargo_space_used(), 15); // 10 + 5
         assert_eq!(inventory.remaining_cargo_space(), 85); // 100 - 15
@@ -321,35 +360,55 @@ mod tests {
     #[test]
     fn test_commodity_inventory_overflow() {
         let mut inventory = CommodityInventory::new(10);
-        
+
         // Adding more than capacity should fail
         assert!(inventory.add_commodity(CommodityType::Water, 15).is_err());
-        
+
         // Adding up to capacity should work
         assert!(inventory.add_commodity(CommodityType::Water, 10).is_ok());
         assert_eq!(inventory.total_cargo_space_used(), 10);
-        
+
         // Adding more should fail
-        assert!(inventory.add_commodity(CommodityType::Foodstuffs, 1).is_err());
+        assert!(
+            inventory
+                .add_commodity(CommodityType::Foodstuffs, 1)
+                .is_err()
+        );
     }
 
     #[test]
     fn test_commodity_inventory_remove_operations() {
         let mut inventory = CommodityInventory::new(100);
-        
+
         // Add commodities
-        inventory.add_commodity(CommodityType::Medicine, 10).unwrap();
-        
+        inventory
+            .add_commodity(CommodityType::Medicine, 10)
+            .unwrap();
+
         // Remove some
-        assert_eq!(inventory.remove_commodity(&CommodityType::Medicine, 3).unwrap(), 3);
+        assert_eq!(
+            inventory
+                .remove_commodity(&CommodityType::Medicine, 3)
+                .unwrap(),
+            3
+        );
         assert_eq!(inventory.get_quantity(&CommodityType::Medicine), 7);
-        
+
         // Remove all remaining
-        assert_eq!(inventory.remove_commodity(&CommodityType::Medicine, 7).unwrap(), 7);
+        assert_eq!(
+            inventory
+                .remove_commodity(&CommodityType::Medicine, 7)
+                .unwrap(),
+            7
+        );
         assert!(!inventory.contains(&CommodityType::Medicine));
-        
+
         // Try to remove from empty
-        assert!(inventory.remove_commodity(&CommodityType::Medicine, 1).is_err());
+        assert!(
+            inventory
+                .remove_commodity(&CommodityType::Medicine, 1)
+                .is_err()
+        );
     }
 
     #[test]

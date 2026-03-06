@@ -100,14 +100,14 @@ pub fn display_travel_options(world: &World) -> String {
 
     for planet in &world.planets {
         if planet.id != world.player.location {
-            let travel_time = crate::simulation::travel::calculate_travel_time(
+            let travel_turns = crate::simulation::travel::calculate_travel_turns(
                 current_planet,
                 planet,
-                world.player.ship.speed,
+                world.player.ship.acceleration,
             );
             travel_list.push_str(&format!(
                 "Travel to {} (Time: {} months)\n",
-                planet.id, travel_time
+                planet.id, travel_turns
             ));
         }
     }

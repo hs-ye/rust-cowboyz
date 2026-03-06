@@ -1,14 +1,14 @@
 mod assets;
-mod simulation;
-mod setup;
-mod player;
 mod game_state;
+mod player;
+mod setup;
+mod simulation;
 
 pub mod ui;
 
-use clap::{Parser, CommandFactory};
-use ui::cli::{Cli, Commands};
+use clap::{CommandFactory, Parser};
 use std::io::{self, Write};
+use ui::cli::{Cli, Commands};
 
 fn main() {
     // Check if the program was called with --help or --version directly
@@ -24,10 +24,7 @@ fn main() {
         }
     }
 
-    let mut world = setup::initialize_world(
-        "data/config/goods.yaml",
-        "data/config/planets.yaml",
-    );
+    let mut world = setup::initialize_world("data/config/goods.yaml", "data/config/planets.yaml");
 
     // Calculate initial planet positions
     world.initialize_positions();
@@ -38,7 +35,10 @@ fn main() {
         // Check if game has ended
         if world.game_clock.current_turn >= world.game_clock.total_turns {
             println!("Game Over! You have reached the end of the game.");
-            println!("Final Score: ${} after {} turns", world.player.money, world.game_clock.current_turn);
+            println!(
+                "Final Score: ${} after {} turns",
+                world.player.money, world.game_clock.current_turn
+            );
             break;
         }
 
@@ -56,7 +56,7 @@ fn main() {
         let mut args = vec!["rust-cowboyz".to_string()]; // Dummy program name
         args.extend(shlex::split(input).unwrap_or_else(|| {
             eprintln!("Error: Invalid input");
-            return Vec::new();
+            Vec::new()
         }));
 
         if args.len() == 1 {
@@ -90,7 +90,9 @@ fn main() {
                     Err(error) => eprintln!("Error: {}", error),
                 }
             }
-            Commands::Travel { destination_planet_id } => {
+            Commands::Travel {
+                destination_planet_id,
+            } => {
                 match player::actions::handle_travel(&mut world, destination_planet_id) {
                     Ok(message) => {
                         println!("{}", message);
@@ -99,16 +101,14 @@ fn main() {
                         println!("{}", ui::cli::display_player_status(&world));
                         println!("{}", ui::cli::display_market_status(&world));
                         println!("{}", ui::cli::display_travel_options(&world));
-                    },
+                    }
                     Err(error) => eprintln!("Error: {}", error),
                 }
             }
-            Commands::Wait { months } => {
-                match player::actions::handle_wait(&mut world, *months) {
-                    Ok(message) => println!("{}", message),
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
+            Commands::Wait { months } => match player::actions::handle_wait(&mut world, *months) {
+                Ok(message) => println!("{}", message),
+                Err(error) => eprintln!("Error: {}", error),
+            },
             Commands::PlanetInfo { planet_id } => {
                 println!("{}", ui::cli::display_planet_info(&world, planet_id));
             }
@@ -127,18 +127,16 @@ mod tests {
     #[test]
     fn test_mvp_gameplay_flow() {
         // Initialize the game world
-        let mut world = setup::initialize_world(
-            "data/config/goods.yaml",
-            "data/config/planets.yaml",
-        );
-        
+        let mut world =
+            setup::initialize_world("data/config/goods.yaml", "data/config/planets.yaml");
+
         // Verify initial state matches MVP requirements
         assert_eq!(world.player.money, 1000);
         assert_eq!(world.player.location, "earth");
         assert_eq!(world.player.inventory.capacity, 10);
         assert_eq!(world.game_clock.current_turn, 1);
         assert_eq!(world.game_clock.total_turns, 10);
-        
+
         // Test buying commodities
         let initial_money = world.player.money;
         let result = player::actions::handle_buy(&mut world, "Water", 2);
@@ -146,7 +144,13 @@ mod tests {
         // Player should have spent money
         assert!(world.player.money < initial_money);
         // Player should have 2 units of Water in cargo
-        assert_eq!(world.player.inventory.get_commodity_quantity(&simulation::commodity::CommodityType::Water), 2);
+        assert_eq!(
+            world
+                .player
+                .inventory
+                .get_commodity_quantity(&simulation::commodity::CommodityType::Water),
+            2
+        );
 
         // Test selling commodities
         let money_before_sell = world.player.money;
@@ -155,15 +159,21 @@ mod tests {
         // Player should have more money after selling
         assert!(world.player.money > money_before_sell);
         // Player should have 1 unit of Water left in cargo
-        assert_eq!(world.player.inventory.get_commodity_quantity(&simulation::commodity::CommodityType::Water), 1);
-        
+        assert_eq!(
+            world
+                .player
+                .inventory
+                .get_commodity_quantity(&simulation::commodity::CommodityType::Water),
+            1
+        );
+
         // Test travel
         let _initial_location = world.player.location.clone();
         let result = player::actions::handle_travel(&mut world, "mars");
         assert!(result.is_ok());
         // Player should now be on Mars
         assert_eq!(world.player.location, "mars");
-        
+
         // Test wait command
         let turn_before_wait = world.game_clock.current_turn;
         let result = player::actions::handle_wait(&mut world, 5);
