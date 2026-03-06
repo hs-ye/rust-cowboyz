@@ -6,9 +6,23 @@ use leptos::prelude::*;
 use leptos_meta::{Title, Meta};
 use crate::ui::solar_map::{SolarMap, MapPlanet};
 use crate::ui::game_config_modal::{GameConfigModal, GameConfig};
+use crate::ui::travel_panel::{TravelPanel, TravelAnimation};
 use crate::simulation::planet_types::PlanetType;
 use crate::game_state::{GameState, GameDifficulty, GameSettings, Player, Ship, CargoHold, SolarSystem, Planet, GameClock, validate_game_state, ValidationResult};
 use crate::assets::save_game::{save_game_to_browser, load_game_from_browser, has_saved_game, LOCAL_STORAGE_KEY, SaveLoadError};
+
+/// Calculate travel time using Brachistochrone model
+/// Formula: travel_turns = 2 * sqrt(base_distance / acceleration)
+fn calculate_travel_turns(origin_orbit_radius: u32, dest_orbit_radius: u32, ship_acceleration: u32) -> u32 {
+    let base_distance = origin_orbit_radius.abs_diff(dest_orbit_radius);
+    
+    if base_distance == 0 {
+        return 1;
+    }
+
+    let travel_turns = 2.0 * (base_distance as f64 / ship_acceleration.max(1) as f64).sqrt();
+    std::cmp::max(travel_turns.ceil() as u32, 1)
+}
 
 /// Main application component with 60/40 split-screen layout
 #[component]
@@ -35,6 +49,11 @@ fn App() -> impl IntoView {
     // Game configuration modal state
     let (is_modal_open, set_is_modal_open) = signal(false);
     let (has_existing_game, set_has_existing_game) = signal(false);
+
+    // Travel animation state
+    let (is_traveling, set_is_traveling) = signal(false);
+    let (travel_origin_name, set_travel_origin_name) = signal(String::new());
+    let (travel_destination_name, set_travel_destination_name) = signal(String::new());
 
     // Initialize game state from localStorage on mount
     let initialize_game = move || {
@@ -175,15 +194,79 @@ fn App() -> impl IntoView {
     // Create sample planets for the solar map
     let planets = create_map_planets();
 
-    // Handle planet selection
+    // Handle planet selection - just select for travel, don't change location yet
     let on_planet_select = move |planet_id: String| {
         set_selected_planet.set(Some(planet_id.clone()));
-        // Update location to selected planet (for demo purposes)
-        set_game_state.update(|state| {
-            state.player.location = planet_id.clone();
-        });
-        // Auto-save after significant action (changing location)
-        auto_save();
+    };
+
+    // Handle travel confirmation
+    let on_travel_confirm = move || {
+        let destination_id = match selected_planet.get() {
+            Some(id) => id,
+            None => return,
+        };
+
+        let current_state = game_state.get();
+        let origin_planet = current_state.solar_system.get_planet(&current_state.player.location);
+        let dest_planet = current_state.solar_system.get_planet(&destination_id);
+
+        match (origin_planet, dest_planet) {
+            (Some(origin), Some(dest)) => {
+                // Calculate travel cost
+                let distance = origin.orbit_radius.abs_diff(dest.orbit_radius);
+                let fuel_required = distance.max(1);
+                let travel_turns = calculate_travel_turns(origin.orbit_radius, dest.orbit_radius, current_state.player.ship.acceleration);
+
+                // Check if player has enough fuel
+                if current_state.player.ship.fuel < fuel_required {
+                    // Not enough fuel - could add a toast notification here
+                    return;
+                }
+
+                // Set travel animation state
+                set_travel_origin_name.set(origin.name.clone());
+                set_travel_destination_name.set(dest.name.clone());
+                set_is_traveling.set(true);
+
+                // Perform travel after a short delay to show animation
+                let game_state_clone = game_state.clone();
+                let set_game_state_clone = set_game_state.clone();
+                let set_selected_planet_clone = set_selected_planet.clone();
+                let set_is_traveling_clone = set_is_traveling.clone();
+                let auto_save_clone = auto_save.clone();
+
+                set_timeout(move || {
+                    set_game_state_clone.update(|state| {
+                        // Consume fuel
+                        state.player.ship.fuel = state.player.ship.fuel.saturating_sub(fuel_required);
+                        // Update location
+                        state.player.location = destination_id.clone();
+                        // Advance game clock
+                        state.advance_turns(travel_turns);
+                    });
+                    
+                    // Clear selection and stop animation
+                    set_selected_planet_clone.set(None);
+                    set_is_traveling_clone.set(false);
+                    
+                    // Auto-save after travel
+                    auto_save_clone();
+                }, 2000);
+            }
+            _ => {
+                // Invalid planets
+            }
+        }
+    };
+
+    // Handle travel cancel
+    let on_travel_cancel = move || {
+        set_selected_planet.set(None);
+    };
+
+    // Handle travel animation complete
+    let on_travel_animation_complete = move || {
+        set_is_traveling.set(false);
     };
 
     // Get selected planet info for display
@@ -341,6 +424,31 @@ fn App() -> impl IntoView {
                         </div>
                     </div>
 
+                    // Travel Selection Panel
+                    {move || {
+                        let current_state = game_state.get();
+                        let origin_planet = current_state.solar_system.get_planet(&current_state.player.location).cloned();
+                        let dest_planet = selected_planet.get()
+                            .and_then(|id| current_state.solar_system.get_planet(&id).cloned());
+                        let player_fuel = current_state.player.ship.fuel;
+                        let ship_accel = current_state.player.ship.acceleration;
+                        let current_turn = current_state.game_clock.current_turn;
+                        let total_turns = current_state.game_clock.total_turns;
+
+                        view! {
+                            <TravelPanel
+                                origin_planet={origin_planet}
+                                destination_planet={dest_planet}
+                                player_fuel={player_fuel}
+                                ship_acceleration={ship_accel}
+                                current_turn={current_turn}
+                                total_turns={total_turns}
+                                on_travel_confirm={Box::new(on_travel_confirm)}
+                                on_cancel={Box::new(on_travel_cancel)}
+                            />
+                        }
+                    }}
+
                     // Ship Status Panel
                     <div class="panel ship-panel">
                         <div class="panel-header">
@@ -464,6 +572,14 @@ fn App() -> impl IntoView {
                 view! { <></> }
             }
         }}
+
+        // Travel Animation Overlay
+        <TravelAnimation
+            is_active={is_traveling.get()}
+            origin_name={travel_origin_name.get()}
+            destination_name={travel_destination_name.get()}
+            on_complete={Box::new(on_travel_animation_complete)}
+        />
     }
 }
 
