@@ -1,15 +1,9 @@
 use crate::{
-    setup::World,
-    simulation::commodity::CommodityType,
-    simulation::travel::calculate_travel_turns,
+    setup::World, simulation::commodity::CommodityType, simulation::travel::calculate_travel_turns,
     simulation::turn_manager::TurnManager,
 };
 
-pub fn handle_buy(
-    world: &mut World,
-    commodity_str: &str,
-    quantity: u32,
-) -> Result<String, String> {
+pub fn handle_buy(world: &mut World, commodity_str: &str, quantity: u32) -> Result<String, String> {
     // Convert string to CommodityType
     let commodity_type = str_to_commodity_type(commodity_str)
         .ok_or_else(|| format!("Unknown commodity type: '{}'", commodity_str))?;
@@ -41,7 +35,9 @@ pub fn handle_buy(
     }
 
     // Add commodity to inventory
-    player.inventory.add_commodity(commodity_type.clone(), quantity)
+    player
+        .inventory
+        .add_commodity(commodity_type.clone(), quantity)
         .map_err(|e| e.to_string())?;
 
     // Deduct money
@@ -50,7 +46,10 @@ pub fn handle_buy(
     // Update market supply based on purchase (player buying = market supply decreases)
     market_commodity.adjust_supply_from_trade(-(quantity as i32));
 
-    Ok(format!("Successfully purchased {} of '{}'", quantity, commodity_str))
+    Ok(format!(
+        "Successfully purchased {} of '{}'",
+        quantity, commodity_str
+    ))
 }
 
 pub fn handle_sell(
@@ -79,11 +78,16 @@ pub fn handle_sell(
     // Check if player has enough of the commodity
     let available_quantity = player.inventory.get_commodity_quantity(&commodity_type);
     if available_quantity < quantity {
-        return Err(format!("You only have {} of '{}' to sell", available_quantity, commodity_str));
+        return Err(format!(
+            "You only have {} of '{}' to sell",
+            available_quantity, commodity_str
+        ));
     }
 
     // Remove commodity from inventory
-    player.inventory.remove_commodity(commodity_type.clone(), quantity)
+    player
+        .inventory
+        .remove_commodity(commodity_type.clone(), quantity)
         .map_err(|e| e.to_string())?;
 
     let total_sale_price = market_commodity.buy_price * quantity;
@@ -92,13 +96,13 @@ pub fn handle_sell(
     // Update market supply based on sale (player selling = market supply increases)
     market_commodity.adjust_supply_from_trade(quantity as i32);
 
-    Ok(format!("Successfully sold {} of '{}'", quantity, commodity_str))
+    Ok(format!(
+        "Successfully sold {} of '{}'",
+        quantity, commodity_str
+    ))
 }
 
-pub fn handle_travel(
-    world: &mut World,
-    destination_planet_id: &str,
-) -> Result<String, String> {
+pub fn handle_travel(world: &mut World, destination_planet_id: &str) -> Result<String, String> {
     let (origin_planet, destination_planet) = {
         let origin = world
             .planets
@@ -117,9 +121,9 @@ pub fn handle_travel(
 
     // Calculate travel time using the new turn-based function
     let travel_turns = calculate_travel_turns(
-        &origin_planet, 
-        &destination_planet, 
-        world.player.ship.acceleration
+        &origin_planet,
+        &destination_planet,
+        world.player.ship.acceleration,
     );
 
     // Use TurnManager to advance all game systems synchronously
@@ -138,13 +142,12 @@ pub fn handle_travel(
     let message = if result.is_game_over {
         format!(
             "Traveled to {}. It took {} turns. GAME OVER!",
-            destination_planet_id, 
-            result.turns_advanced
+            destination_planet_id, result.turns_advanced
         )
     } else {
         format!(
             "Traveled to {}. It took {} turns. Current turn: {}/{}.",
-            destination_planet_id, 
+            destination_planet_id,
             result.turns_advanced,
             world.game_clock.current_turn,
             world.game_clock.total_turns
@@ -154,10 +157,7 @@ pub fn handle_travel(
     Ok(message)
 }
 
-pub fn handle_wait(
-    world: &mut World,
-    turns: u32,
-) -> Result<String, String> {
+pub fn handle_wait(world: &mut World, turns: u32) -> Result<String, String> {
     // Use TurnManager to advance all game systems synchronously
     let result = TurnManager::advance_turns(
         &mut world.planets,
@@ -168,16 +168,11 @@ pub fn handle_wait(
 
     // Build response message
     let message = if result.is_game_over {
-        format!(
-            "Waited for {} turns. GAME OVER!",
-            result.turns_advanced
-        )
+        format!("Waited for {} turns. GAME OVER!", result.turns_advanced)
     } else {
         format!(
             "Waited for {} turns. Current turn: {}/{}.",
-            result.turns_advanced,
-            world.game_clock.current_turn,
-            world.game_clock.total_turns
+            result.turns_advanced, world.game_clock.current_turn, world.game_clock.total_turns
         )
     };
 
@@ -196,7 +191,9 @@ fn str_to_commodity_type(s: &str) -> Option<CommodityType> {
         "antimatter" => Some(CommodityType::Antimatter),
         "electronics" => Some(CommodityType::Electronics),
         "narcotics" => Some(CommodityType::Narcotics),
-        "alienartefacts" | "alien artefacts" | "alien_artefacts" => Some(CommodityType::AlienArtefacts),
+        "alienartefacts" | "alien artefacts" | "alien_artefacts" => {
+            Some(CommodityType::AlienArtefacts)
+        }
         _ => None,
     }
 }
@@ -205,44 +202,36 @@ fn str_to_commodity_type(s: &str) -> Option<CommodityType> {
 mod tests {
     use super::*;
     use crate::{
+        game_state::GameClock,
+        player::{Player, inventory::CargoHold, ship::Ship},
         setup::World,
-        player::{inventory::CargoHold, Player, ship::Ship},
-        simulation::economy::{MarketGood, PlanetEconomy},
-        simulation::commodity::CommodityType,
+        simulation::economy::PlanetEconomy,
         simulation::orbits::{Planet, Position},
         simulation::planet_types::PlanetType,
-        game_state::GameClock,
     };
-    use std::collections::HashMap;
 
     fn create_mock_world() -> World {
-        let mut market_earth = HashMap::new();
-        market_earth.insert(CommodityType::Water, MarketGood::new(&CommodityType::Water, &PlanetType::Agricultural));
-        market_earth.insert(CommodityType::Foodstuffs, MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::Agricultural));
+        // Use PlanetEconomy::new() to properly initialize all 10 commodities
+        let economy_earth = PlanetEconomy::new(PlanetType::Agricultural);
+        let economy_mars = PlanetEconomy::new(PlanetType::Mining);
 
         let planet_earth = Planet {
             id: "earth".to_string(),
+            name: "Earth".to_string(),
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { 
-                market: market_earth,
-                planet_type: PlanetType::Agricultural,
-                active_events: Vec::new(),
-            },
+            economy: economy_earth,
             planet_type: PlanetType::Agricultural,
         };
 
         let planet_mars = Planet {
             id: "mars".to_string(),
+            name: "Mars".to_string(),
             orbit_radius: 12,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { 
-                market: HashMap::new(),
-                planet_type: PlanetType::Mining,
-                active_events: Vec::new(),
-            },
+            economy: economy_mars,
             planet_type: PlanetType::Mining,
         };
 
@@ -265,39 +254,53 @@ mod tests {
     #[test]
     fn test_handle_buy_successful() {
         let mut world = create_mock_world();
-        
+
         // Get the sell price of water on Agricultural planet
-        let water_price = world.planets.iter()
+        let water_price = world
+            .planets
+            .iter()
             .find(|p| p.id == "earth")
             .unwrap()
-            .economy.market.get(&CommodityType::Water)
+            .economy
+            .market
+            .get(&CommodityType::Water)
             .unwrap()
             .sell_price;
-        
+
         let result = handle_buy(&mut world, "water", 5);
         assert!(result.is_ok());
         // Player should have spent water_price * 5
         assert_eq!(world.player.money, 100 - (water_price * 5));
-        assert_eq!(world.player.inventory.get_commodity_quantity(&CommodityType::Water), 5);
+        assert_eq!(
+            world
+                .player
+                .inventory
+                .get_commodity_quantity(&CommodityType::Water),
+            5
+        );
     }
 
     #[test]
     fn test_handle_buy_insufficient_funds() {
         let mut world = create_mock_world();
-        
+
         // Get the sell price of water
-        let water_price = world.planets.iter()
+        let water_price = world
+            .planets
+            .iter()
             .find(|p| p.id == "earth")
             .unwrap()
-            .economy.market.get(&CommodityType::Water)
+            .economy
+            .market
+            .get(&CommodityType::Water)
             .unwrap()
             .sell_price;
-        
+
         // Try to buy more than player can afford (player has 100)
         // Use a quantity that costs more than 100 but fits in cargo (cargo capacity is 50)
         let quantity = (100 / water_price) + 1;
         let result = handle_buy(&mut world, "water", quantity);
-        
+
         // Should fail with either insufficient funds or insufficient cargo space
         // (whichever comes first given the constraints)
         assert!(result.is_err());
@@ -316,32 +319,45 @@ mod tests {
     #[test]
     fn test_handle_buy_commodity_not_at_market() {
         let mut world = create_mock_world();
-        let result = handle_buy(&mut world, "medicine", 1);
+        // Use an invalid commodity name - this tests the case where the commodity
+        // type doesn't exist in the game at all (not in CommodityType enum)
+        let result = handle_buy(&mut world, "gold", 1);
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "Commodity 'medicine' not available at this market"
-        );
+        assert_eq!(result.unwrap_err(), "Unknown commodity type: 'gold'");
     }
 
     #[test]
     fn test_handle_sell_successful() {
         let mut world = create_mock_world();
-        world.player.inventory.add_commodity(CommodityType::Water, 10).unwrap();
-        
+        world
+            .player
+            .inventory
+            .add_commodity(CommodityType::Water, 10)
+            .unwrap();
+
         // Get the buy price of water
-        let water_buy_price = world.planets.iter()
+        let water_buy_price = world
+            .planets
+            .iter()
             .find(|p| p.id == "earth")
             .unwrap()
-            .economy.market.get(&CommodityType::Water)
+            .economy
+            .market
+            .get(&CommodityType::Water)
             .unwrap()
             .buy_price;
-        
+
         let result = handle_sell(&mut world, "water", 5);
         assert!(result.is_ok());
         // Player should have received water_buy_price * 5
         assert_eq!(world.player.money, 100 + (water_buy_price * 5));
-        assert_eq!(world.player.inventory.get_commodity_quantity(&CommodityType::Water), 5);
+        assert_eq!(
+            world
+                .player
+                .inventory
+                .get_commodity_quantity(&CommodityType::Water),
+            5
+        );
     }
 
     #[test]
@@ -355,7 +371,11 @@ mod tests {
     #[test]
     fn test_handle_sell_insufficient_quantity() {
         let mut world = create_mock_world();
-        world.player.inventory.add_commodity(CommodityType::Water, 5).unwrap();
+        world
+            .player
+            .inventory
+            .add_commodity(CommodityType::Water, 5)
+            .unwrap();
         let result = handle_sell(&mut world, "water", 10);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "You only have 5 of 'water' to sell");
@@ -398,9 +418,14 @@ mod tests {
         assert_eq!(str_to_commodity_type("water"), Some(CommodityType::Water));
         assert_eq!(str_to_commodity_type("WATER"), Some(CommodityType::Water));
         assert_eq!(str_to_commodity_type("Water"), Some(CommodityType::Water));
-        assert_eq!(str_to_commodity_type("foodstuffs"), Some(CommodityType::Foodstuffs));
-        assert_eq!(str_to_commodity_type("alien artefacts"), Some(CommodityType::AlienArtefacts));
+        assert_eq!(
+            str_to_commodity_type("foodstuffs"),
+            Some(CommodityType::Foodstuffs)
+        );
+        assert_eq!(
+            str_to_commodity_type("alien artefacts"),
+            Some(CommodityType::AlienArtefacts)
+        );
         assert_eq!(str_to_commodity_type("unknown"), None);
     }
 }
-

@@ -15,33 +15,29 @@ pub enum Commands {
     Status {},
     /// Buy commodities from the current planet's market
     Buy {
-        good_id: String,  // Still using good_id to avoid breaking CLI interface
+        good_id: String, // Still using good_id to avoid breaking CLI interface
         quantity: u32,
     },
     /// Sell commodities to the current planet's market
     Sell {
-        good_id: String,  // Still using good_id to avoid breaking CLI interface
+        good_id: String, // Still using good_id to avoid breaking CLI interface
         quantity: u32,
     },
     /// Travel to a different planet
-    Travel {
-        destination_planet_id: String,
-    },
+    Travel { destination_planet_id: String },
     /// Wait at the current location, advancing time
-    Wait {
-        months: u32,
-    },
+    Wait { months: u32 },
     /// Show information about a specific planet
-    PlanetInfo {
-        planet_id: String,
-    },
+    PlanetInfo { planet_id: String },
     /// Exit the game
     Quit,
 }
 
 pub fn display_game_status(world: &World) -> String {
-    format!("--- Game Status ---\nCurrent Turn: {} / Total Turns: {}\n",
-           world.game_clock.current_turn, world.game_clock.total_turns)
+    format!(
+        "--- Game Status ---\nCurrent Turn: {} / Total Turns: {}\n",
+        world.game_clock.current_turn, world.game_clock.total_turns
+    )
 }
 
 pub fn display_player_status(world: &World) -> String {
@@ -50,12 +46,22 @@ pub fn display_player_status(world: &World) -> String {
         commodities_list.push_str("  (empty)");
     } else {
         for (commodity_type, quantity) in world.player.inventory.get_commodities_list() {
-            commodities_list.push_str(&format!("  {} x {}\n", commodity_type.display_name(), quantity));
+            commodities_list.push_str(&format!(
+                "  {} x {}\n",
+                commodity_type.display_name(),
+                quantity
+            ));
         }
     }
 
-    format!("--- Player Status ---\nLocation: {}\nMoney: {}\nCargo: {}/{}\nCommodities:\n{}",
-           world.player.location, world.player.money, world.player.inventory.current_load(), world.player.inventory.capacity, commodities_list)
+    format!(
+        "--- Player Status ---\nLocation: {}\nMoney: {}\nCargo: {}/{}\nCommodities:\n{}",
+        world.player.location,
+        world.player.money,
+        world.player.inventory.current_load(),
+        world.player.inventory.capacity,
+        commodities_list
+    )
 }
 
 pub fn display_market_status(world: &World) -> String {
@@ -66,29 +72,43 @@ pub fn display_market_status(world: &World) -> String {
         market_list.push_str("Commodity      Buy Price   Sell Price\n");
         market_list.push_str("---------------------------------------\n");
         for market_commodity in planet.economy.market.values() {
-            market_list.push_str(&format!("{:<14} {:<12} {:<12}\n",
-                                           market_commodity.commodity_type.display_name(),
-                                           market_commodity.buy_price,
-                                           market_commodity.sell_price));
+            market_list.push_str(&format!(
+                "{:<14} {:<12} {:<12}\n",
+                market_commodity.commodity_type.display_name(),
+                market_commodity.buy_price,
+                market_commodity.sell_price
+            ));
         }
     } else {
         market_list.push_str("Market information not available for current location.");
     }
 
-    format!("--- Market Status ({}) ---\n{}", world.player.location, market_list)
+    format!(
+        "--- Market Status ({}) ---\n{}",
+        world.player.location, market_list
+    )
 }
 
 pub fn display_travel_options(world: &World) -> String {
     let mut travel_list = String::new();
 
-    let current_planet = world.planets.iter()
+    let current_planet = world
+        .planets
+        .iter()
         .find(|p| p.id == world.player.location)
         .expect("Player is not at a valid planet");
 
     for planet in &world.planets {
         if planet.id != world.player.location {
-            let travel_time = crate::simulation::travel::calculate_travel_time(current_planet, planet, world.player.ship.speed);
-            travel_list.push_str(&format!("Travel to {} (Time: {} months)\n", planet.id, travel_time));
+            let travel_time = crate::simulation::travel::calculate_travel_time(
+                current_planet,
+                planet,
+                world.player.ship.speed,
+            );
+            travel_list.push_str(&format!(
+                "Travel to {} (Time: {} months)\n",
+                planet.id, travel_time
+            ));
         }
     }
 
@@ -96,7 +116,9 @@ pub fn display_travel_options(world: &World) -> String {
 }
 
 pub fn display_planet_info(world: &World, planet_id: &str) -> String {
-    let planet = world.planets.iter()
+    let planet = world
+        .planets
+        .iter()
         .find(|p| p.id == planet_id)
         .ok_or_else(|| format!("Planet '{}' not found", planet_id))
         .expect("Planet not found");
@@ -105,10 +127,12 @@ pub fn display_planet_info(world: &World, planet_id: &str) -> String {
     market_list.push_str("Commodity      Buy Price   Sell Price\n");
     market_list.push_str("---------------------------------------\n");
     for market_commodity in planet.economy.market.values() {
-        market_list.push_str(&format!("{:<14} {:<12} {:<12}\n",
-                                       market_commodity.commodity_type.display_name(),
-                                       market_commodity.buy_price,
-                                       market_commodity.sell_price));
+        market_list.push_str(&format!(
+            "{:<14} {:<12} {:<12}\n",
+            market_commodity.commodity_type.display_name(),
+            market_commodity.buy_price,
+            market_commodity.sell_price
+        ));
     }
 
     format!("--- Market Status ({}) ---\n{}", planet.id, market_list)
@@ -117,49 +141,44 @@ pub fn display_planet_info(world: &World, planet_id: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::setup::World;
+    use crate::game_state::GameClock;
     use crate::player::{Player, inventory::CargoHold, ship::Ship};
-    use crate::simulation::economy::{MarketGood, PlanetEconomy};
+    use crate::setup::World;
     use crate::simulation::commodity::CommodityType;
+    use crate::simulation::economy::PlanetEconomy;
     use crate::simulation::orbits::{Planet, Position};
     use crate::simulation::planet_types::PlanetType;
-    use crate::game_state::GameClock;
-    use std::collections::HashMap;
 
     // Helper function to create a mock World instance
     fn create_mock_world() -> World {
-        let mut market_earth = HashMap::new();
-        market_earth.insert(CommodityType::Foodstuffs, MarketGood::new(&CommodityType::Foodstuffs, &PlanetType::Agricultural));
-        market_earth.insert(CommodityType::Water, MarketGood::new(&CommodityType::Water, &PlanetType::Agricultural));
+        // Use PlanetEconomy::new() to properly initialize all 10 commodities
+        let economy_earth = PlanetEconomy::new(PlanetType::Agricultural);
+        let economy_mars = PlanetEconomy::new(PlanetType::Mining);
 
         let planet_earth = Planet {
             id: "Earth".to_string(),
+            name: "Earth".to_string(),
             orbit_radius: 5,
             orbit_period: 10,
             position: Position::new(0),
-            economy: PlanetEconomy { 
-                market: market_earth,
-                planet_type: PlanetType::Agricultural,
-                active_events: Vec::new(),
-            },
+            economy: economy_earth,
             planet_type: PlanetType::Agricultural,
         };
 
         let planet_mars = Planet {
             id: "Mars".to_string(),
+            name: "Mars".to_string(),
             orbit_radius: 12,
             orbit_period: 15,
             position: Position::new(7),
-            economy: PlanetEconomy { 
-                market: HashMap::new(),
-                planet_type: PlanetType::Mining,
-                active_events: Vec::new(),
-            },
+            economy: economy_mars,
             planet_type: PlanetType::Mining,
         };
 
         let mut player_inventory = CargoHold::new(100);
-        player_inventory.add_commodity(CommodityType::Foodstuffs, 5).unwrap();
+        player_inventory
+            .add_commodity(CommodityType::Foodstuffs, 5)
+            .unwrap();
 
         World {
             planets: vec![planet_earth, planet_mars],
