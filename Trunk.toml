@@ -1,0 +1,18 @@
+[build]
+# The output directory for build artifacts
+dist = "dist"
+
+# Index HTML file
+index = "index.html"
+
+[build.public]
+# Paths to include from the public directory
+# "/" means the root of the public directory
+"/" = "public/"
+
+[serve]
+# The port to serve the app on
+port = 8080
+
+# The host to bind to
+host = "0.0.0.0"

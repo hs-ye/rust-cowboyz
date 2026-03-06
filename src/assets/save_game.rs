@@ -271,7 +271,7 @@ pub fn get_default_save_path() -> String {
     #[cfg(target_os = "linux")]
     {
         if let Some(home) = std::env::var_os("HOME") {
-            return format!("{}/.local/share/rust-cowboyz/savegame.json", home);
+            return format!("{}/.local/share/rust-cowboyz/savegame.json", home.to_string_lossy());
         }
     }
     
@@ -302,9 +302,24 @@ pub fn quick_load() -> Result<GameState, SaveLoadError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::game_state::{GameSettings, GameDifficulty};
+    use crate::game_state::{GameSettings, GameDifficulty, SolarSystem, Planet};
     use crate::simulation::planet_types::PlanetType;
     use tempfile::tempdir;
+
+    /// Helper function to create a valid game state for testing
+    fn create_valid_test_state() -> GameState {
+        let mut state = GameState::new();
+        // Add at least one planet that matches the player's location
+        state.solar_system.planets.push(Planet::new(
+            "earth".to_string(),
+            "Earth".to_string(),
+            5,
+            10,
+            PlanetType::Agricultural,
+        ));
+        state.player.location = "earth".to_string();
+        state
+    }
 
     #[test]
     fn test_save_and_load_game() {
@@ -312,8 +327,8 @@ mod tests {
         let dir = tempdir().expect("Failed to create temp dir");
         let save_path = dir.path().join("test_save.json");
 
-        // Create a game state
-        let mut state = GameState::new();
+        // Create a game state with valid planet
+        let mut state = create_valid_test_state();
         state.player.money = 5000;
         state.settings.difficulty = GameDifficulty::Hard;
 
@@ -330,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_export_import_json() {
-        let mut state = GameState::new();
+        let mut state = create_valid_test_state();
         state.player.money = 12345;
 
         let json = export_to_json(&state).expect("Failed to export");
@@ -341,10 +356,10 @@ mod tests {
 
     #[test]
     fn test_validation() {
-        let state = GameState::new();
+        let state = create_valid_test_state();
         let validation = validate_game_state(&state);
-        
-        // Should be valid with default values
+
+        // Should be valid with proper planet setup
         assert!(validation.is_valid);
     }
 
@@ -352,9 +367,9 @@ mod tests {
     fn test_validation_errors() {
         let mut state = GameState::new();
         state.player.location = "nonexistent_planet".to_string();
-        
+
         let validation = validate_game_state(&state);
-        
+
         // Should be invalid due to invalid player location
         assert!(!validation.is_valid);
         assert!(!validation.errors.is_empty());

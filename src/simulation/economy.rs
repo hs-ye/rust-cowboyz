@@ -490,12 +490,11 @@ impl PlanetEconomy {
         if let Some(event) = MarketEvent::random() {
             // Apply event to a random commodity
             let commodities: Vec<CommodityType> = self.market.keys().cloned().collect();
-            if let Some(commodity) =
-                commodities.get((rand_f64() * commodities.len() as f64) as usize)
-                && let Some(market_good) = self.market.get_mut(commodity)
-            {
-                market_good.apply_random_event(&event);
-                self.active_events.push(event);
+            if let Some(commodity) = commodities.get((rand_f64() * commodities.len() as f64) as usize) {
+                if let Some(market_good) = self.market.get_mut(commodity) {
+                    market_good.apply_random_event(&event);
+                    self.active_events.push(event);
+                }
             }
         }
     }
