@@ -8,8 +8,11 @@ use crate::ui::solar_map::{SolarMap, MapPlanet};
 use crate::ui::game_config_modal::{GameConfigModal, GameConfig};
 use crate::ui::travel_panel::{TravelPanel, TravelAnimation};
 use crate::simulation::planet_types::PlanetType;
+use crate::simulation::commodity::CommodityType;
+use crate::simulation::economy::{PlanetEconomy, MarketGood, CommodityMarketInfo, PriceAnomaly};
 use crate::game_state::{GameState, GameDifficulty, GameSettings, Player, Ship, CargoHold, SolarSystem, Planet, GameClock, validate_game_state, ValidationResult};
 use crate::assets::save_game::{save_game_to_browser, load_game_from_browser, has_saved_game, LOCAL_STORAGE_KEY, SaveLoadError};
+use std::collections::HashMap;
 
 /// Calculate travel time using Brachistochrone model
 /// Formula: travel_turns = 2 * sqrt(base_distance / acceleration)
@@ -34,9 +37,72 @@ fn App() -> impl IntoView {
     let money = Signal::derive(move || game_state.get().player.money as i32);
     let location = Signal::derive(move || game_state.get().player.location.clone());
     let turn = Signal::derive(move || game_state.get().game_clock.current_turn);
+    let total_turns = Signal::derive(move || game_state.get().game_clock.total_turns);
     let fuel = Signal::derive(move || game_state.get().player.ship.fuel as i32);
+    let max_fuel = Signal::derive(move || game_state.get().player.ship.max_fuel as i32);
     let cargo_capacity = Signal::derive(move || game_state.get().player.ship.cargo_capacity as i32);
     let cargo_used = Signal::derive(move || game_state.get().player.cargo.total_cargo_space_used() as i32);
+    
+    // Derived signals for inventory display
+    let inventory_items = Signal::derive(move || {
+        let state = game_state.get();
+        let mut items: Vec<(String, u32, u32)> = Vec::new();
+        for (commodity, quantity) in &state.player.cargo.commodities {
+            let value = commodity.base_value() * quantity;
+            items.push((commodity.display_name().to_string(), *quantity, value));
+        }
+        items
+    });
+    
+    // Derived signal for current planet's market data
+    let current_planet_market = Signal::derive(move || {
+        let state = game_state.get();
+        let planet = state.solar_system.get_planet(&state.player.location);
+        match planet {
+            Some(p) => {
+                let mut market_items: Vec<MarketDisplayItem> = Vec::new();
+                for (commodity_type, market_good) in &p.economy.market {
+                    market_items.push(MarketDisplayItem {
+                        name: commodity_type.display_name().to_string(),
+                        commodity_type: commodity_type.clone(),
+                        buy_price: market_good.sell_price,
+                        sell_price: market_good.buy_price,
+                        is_produced: market_good.is_produced,
+                        is_demanded: market_good.is_demanded,
+                        price_anomaly: market_good.is_price_anomaly(),
+                    });
+                }
+                // Sort by name for consistent display
+                market_items.sort_by(|a, b| a.name.cmp(&b.name));
+                Some((p.name.clone(), market_items))
+            }
+            None => None,
+        }
+    });
+    
+    // Derived signal for current planet name
+    let current_planet_name = Signal::derive(move || {
+        let state = game_state.get();
+        let planet = state.solar_system.get_planet(&state.player.location);
+        planet.map(|p| p.name.clone()).unwrap_or_else(|| "Unknown".to_string())
+    });
+    
+    // Derived signal for player reputation based on total trades
+    let reputation = Signal::derive(move || {
+        let state = game_state.get();
+        let trades = state.player.total_trades;
+        if trades >= 50 {
+            "传奇 Legend"
+        } else if trades >= 30 {
+            "专家 Expert"
+        } else if trades >= 15 {
+            "熟练 Skilled"
+        } else if trades >= 5 {
+            "老手 Veteran"
+        } else {
+            "新秀 Rookie"
+        }
+    });
     
     // Save status for UI feedback
     let (save_status, set_save_status) = signal(Option::<String>::None);
@@ -294,6 +360,78 @@ fn App() -> impl IntoView {
         auto_save();
     };
 
+    // Handle buy action - buy 1 unit of commodity
+    let on_buy = move |commodity_name: String| {
+        // Find the commodity type from the name
+        let commodity_type = match commodity_name.as_str() {
+            "Water" => Some(CommodityType::Water),
+            "Foodstuffs" => Some(CommodityType::Foodstuffs),
+            "Medicine" => Some(CommodityType::Medicine),
+            "Firearms" => Some(CommodityType::Firearms),
+            "Ammunition" => Some(CommodityType::Ammunition),
+            "Metals" => Some(CommodityType::Metals),
+            "Antimatter" => Some(CommodityType::Antimatter),
+            "Electronics" => Some(CommodityType::Electronics),
+            "Narcotics" => Some(CommodityType::Narcotics),
+            "Alien Artefacts" => Some(CommodityType::AlienArtefacts),
+            _ => None,
+        };
+        
+        if let Some(ct) = commodity_type {
+            let result = set_game_state.update(|state| {
+                buy_commodity(state, &ct, 1)
+            });
+            
+            match result {
+                Ok(()) => {
+                    set_save_status.set(Some("Purchased!".to_string()));
+                    set_timeout(move || set_save_status.set(None), 1500);
+                    auto_save();
+                }
+                Err(e) => {
+                    set_save_status.set(Some(e));
+                    set_timeout(move || set_save_status.set(None), 2000);
+                }
+            }
+        }
+    };
+
+    // Handle sell action - sell 1 unit of commodity
+    let on_sell = move |commodity_name: String| {
+        // Find the commodity type from the name
+        let commodity_type = match commodity_name.as_str() {
+            "Water" => Some(CommodityType::Water),
+            "Foodstuffs" => Some(CommodityType::Foodstuffs),
+            "Medicine" => Some(CommodityType::Medicine),
+            "Firearms" => Some(CommodityType::Firearms),
+            "Ammunition" => Some(CommodityType::Ammunition),
+            "Metals" => Some(CommodityType::Metals),
+            "Antimatter" => Some(CommodityType::Antimatter),
+            "Electronics" => Some(CommodityType::Electronics),
+            "Narcotics" => Some(CommodityType::Narcotics),
+            "Alien Artefacts" => Some(CommodityType::AlienArtefacts),
+            _ => None,
+        };
+        
+        if let Some(ct) = commodity_type {
+            let result = set_game_state.update(|state| {
+                sell_commodity(state, &ct, 1)
+            });
+            
+            match result {
+                Ok(()) => {
+                    set_save_status.set(Some("Sold!".to_string()));
+                    set_timeout(move || set_save_status.set(None), 1500);
+                    auto_save();
+                }
+                Err(e) => {
+                    set_save_status.set(Some(e));
+                    set_timeout(move || set_save_status.set(None), 2000);
+                }
+            }
+        }
+    };
+
     view! {
         <Title text="太空牛仔 - Rust Cowboyz" />
         <Meta name="description" content="A space-western trading game built with Rust and Leptos" />
@@ -393,7 +531,7 @@ fn App() -> impl IntoView {
                                         <span class="tooltip-text">"Each turn represents time passing in the game. Some actions advance turns (travel, certain events)."</span>
                                     </span>
                                 </span>
-                                <span class="stat-value turn">{turn}</span>
+                                <span class="stat-value turn">{move || format!("{}/{}", turn(), total_turns())}</span>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">
@@ -403,7 +541,7 @@ fn App() -> impl IntoView {
                                         <span class="tooltip-text">"Build reputation by completing trades. Higher reputation unlocks better prices and exclusive goods."</span>
                                     </span>
                                 </span>
-                                <span class="stat-value">"新秀 Rookie"</span>
+                                <span class="stat-value">{reputation}</span>
                             </div>
                         </div>
                     </div>
@@ -500,10 +638,10 @@ fn App() -> impl IntoView {
                                         <span class="tooltip-text">"Fuel is consumed when traveling between planets. The farther the distance, the more fuel required."</span>
                                     </span>
                                 </span>
-                                <span class="stat-value fuel"> {fuel()} "/ 100"</span>
+                                <span class="stat-value fuel"> {fuel()} "/ " {max_fuel()}</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill fuel-fill" style={move || format!("width: {}%", fuel())}></div>
+                                <div class="progress-fill fuel-fill" style={move || format!("width: {}%", (fuel() as f64 / max_fuel() as f64) * 100.0)}></div>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">
@@ -532,13 +670,36 @@ fn App() -> impl IntoView {
                             <span class="panel-subtitle">"Inventory"</span>
                         </div>
                         <div class="panel-content">
-                            <div class="inventory-empty">
-                                <p>"货舱为空"</p>
-                                <p class="hint">"Cargo hold is empty"</p>
-                            </div>
-                            <div class="inventory-list">
-                                // Placeholder inventory items
-                            </div>
+                            {move || {
+                                let items = inventory_items.get();
+                                if items.is_empty() {
+                                    view! {
+                                        <div class="inventory-empty">
+                                            <p>"货舱为空"</p>
+                                            <p class="hint">"Cargo hold is empty"</p>
+                                        </div>
+                                    }
+                                } else {
+                                    view! {
+                                        <div class="inventory-list">
+                                            <div class="inventory-header">
+                                                <span>"商品 Item"</span>
+                                                <span>"数量 Qty"</span>
+                                                <span>"价值 Value"</span>
+                                            </div>
+                                            {items.iter().map(|(name, qty, value)| {
+                                                view! {
+                                                    <div class="inventory-row">
+                                                        <span>{name.clone()}</span>
+                                                        <span class="qty">{qty}</span>
+                                                        <span class="value">${value}</span>
+                                                    </div>
+                                                }
+                                            }).collect_view()}
+                                        </div>
+                                    }
+                                }
+                            }}
                         </div>
                     </div>
 
@@ -546,7 +707,7 @@ fn App() -> impl IntoView {
                     <div class="panel market-panel">
                         <div class="panel-header">
                             <h3>"市场" </h3>
-                            <span class="panel-subtitle">"Market - Earth"</span>
+                            <span class="panel-subtitle">{move || format!("Market - {}", current_planet_name())}</span>
                             <div class="info-tooltip">
                                 <span class="info-icon">?</span>
                                 <div class="tooltip-content">
@@ -555,33 +716,69 @@ fn App() -> impl IntoView {
                             </div>
                         </div>
                         <div class="panel-content">
-                            <div class="market-table">
-                                <div class="market-header">
-                                    <span>"商品 Item"</span>
-                                    <span>"买入 Buy"</span>
-                                    <span>"卖出 Sell"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"水 Water"</span>
-                                    <span class="buy-price">"$10"</span>
-                                    <span class="sell-price">"$8"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"食物 Food"</span>
-                                    <span class="buy-price">"$25"</span>
-                                    <span class="sell-price">"$20"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"矿石 Ore"</span>
-                                    <span class="buy-price">"$50"</span>
-                                    <span class="sell-price">"$40"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"电子元件 Electronics"</span>
-                                    <span class="buy-price">"$100"</span>
-                                    <span class="sell-price">"$80"</span>
-                                </div>
-                            </div>
+                            {move || {
+                                match current_planet_market.get() {
+                                    Some((planet_name, market_items)) => {
+                                        view! {
+                                            <div class="market-table">
+                                                <div class="market-header">
+                                                    <span>"商品 Item"</span>
+                                                    <span>"买入 Buy"</span>
+                                                    <span>"卖出 Sell"</span>
+                                                    <span>"操作 Actions"</span>
+                                                </div>
+                                                {market_items.iter().map(|item| {
+                                                    let name = item.name.clone();
+                                                    let on_buy = on_buy.clone();
+                                                    let on_sell = on_sell.clone();
+                                                    view! {
+                                                        <div class="market-row">
+                                                            <span class="commodity-name">
+                                                                {item.name.clone()}
+                                                                {move || {
+                                                                    if item.is_produced {
+                                                                        view! { <span class="tag produced">"本地"</span> }
+                                                                    } else if item.is_demanded {
+                                                                        view! { <span class="tag demanded">"需求"</span> }
+                                                                    } else {
+                                                                        view! { <></> }
+                                                                    }
+                                                                }}
+                                                            </span>
+                                                            <span class="buy-price">${item.buy_price}</span>
+                                                            <span class="sell-price">${item.sell_price}</span>
+                                                            <span class="actions">
+                                                                <button 
+                                                                    class="trade-btn buy-btn"
+                                                                    on:click={move |_| on_buy(name.clone())}
+                                                                    title={format!("Buy {} for ${}", name, item.buy_price)}
+                                                                >
+                                                                    "+"
+                                                                </button>
+                                                                <button 
+                                                                    class="trade-btn sell-btn"
+                                                                    on:click={move |_| on_sell(name.clone())}
+                                                                    title={format!("Sell {} for ${}", name, item.sell_price)}
+                                                                >
+                                                                    "-"
+                                                                </button>
+                                                            </span>
+                                                        </div>
+                                                    }
+                                                }).collect_view()}
+                                            </div>
+                                        }
+                                    }
+                                    None => {
+                                        view! {
+                                            <div class="market-empty">
+                                                <p>"市场不可用"</p>
+                                                <p class="hint">"Market not available"</p>
+                                            </div>
+                                        }
+                                    }
+                                }
+                            }}
                         </div>
                     </div>
                 </div>
@@ -797,6 +994,83 @@ fn calculate_position_at_turn(orbit_period: u32, turn: u32) -> String {
     }
     let position = turn % orbit_period;
     format!("{}/{}", position, orbit_period)
+}
+
+/// Structure for displaying market items in the UI
+#[derive(Clone)]
+struct MarketDisplayItem {
+    name: String,
+    commodity_type: CommodityType,
+    buy_price: u32,
+    sell_price: u32,
+    is_produced: bool,
+    is_demanded: bool,
+    price_anomaly: Option<PriceAnomaly>,
+}
+
+/// Buy commodity from market
+fn buy_commodity(state: &mut GameState, commodity_type: &CommodityType, quantity: u32) -> Result<(), String> {
+    let planet = state.solar_system.get_planet(&state.player.location)
+        .ok_or("Current planet not found")?;
+    
+    let market_good = planet.economy.get(commodity_type)
+        .ok_or("Commodity not available")?;
+    
+    let total_cost = market_good.sell_price * quantity;
+    
+    if state.player.money < total_cost {
+        return Err("Not enough money".to_string());
+    }
+    
+    if state.player.cargo.remaining_cargo_space() < quantity {
+        return Err("Not enough cargo space".to_string());
+    }
+    
+    // Deduct money
+    state.player.money -= total_cost;
+    
+    // Add to cargo
+    state.player.cargo.add_commodity(commodity_type.clone(), quantity)
+        .map_err(|e| e.to_string())?;
+    
+    // Update market
+    let mut planet = state.solar_system.get_planet_mut(&state.player.location).unwrap();
+    planet.economy.process_trade(commodity_type, -(quantity as i32)).ok();
+    
+    Ok(())
+}
+
+/// Sell commodity to market
+fn sell_commodity(state: &mut GameState, commodity_type: &CommodityType, quantity: u32) -> Result<(), String> {
+    let planet = state.solar_system.get_planet(&state.player.location)
+        .ok_or("Current planet not found")?;
+    
+    let market_good = planet.economy.get(commodity_type)
+        .ok_or("Commodity not available")?;
+    
+    // Check if player has enough of this commodity
+    if state.player.cargo.get_quantity(commodity_type) < quantity {
+        return Err("Not enough of this commodity in cargo".to_string());
+    }
+    
+    let total_revenue = market_good.buy_price * quantity;
+    
+    // Remove from cargo
+    state.player.cargo.remove_commodity(commodity_type, quantity)
+        .map_err(|e| e.to_string())?;
+    
+    // Add money
+    state.player.money += total_revenue;
+    
+    // Update market
+    let mut planet = state.solar_system.get_planet_mut(&state.player.location).unwrap();
+    planet.economy.process_trade(commodity_type, quantity as i32).ok();
+    
+    // Update player stats
+    state.player.total_trades += 1;
+    state.player.total_earnings += total_revenue;
+    
+    Ok(())
 }
 
 /// Main entry point for the web application
