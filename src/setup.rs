@@ -1,7 +1,7 @@
 // src/setup.rs
 
 use crate::assets::config_loader;
-use crate::simulation::{economy, orbits, commodity, planet_types};
+use crate::simulation::{commodity, economy, orbits, planet_types};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -9,10 +9,7 @@ use std::collections::HashMap;
 ///
 /// This function orchestrates the loading of game data from configuration files,
 /// creates the initial game state, and sets the starting positions of the planets.
-pub fn initialize_world(
-    _goods_config_path: &str,
-    planets_config_path: &str,
-) -> World {
+pub fn initialize_world(_goods_config_path: &str, planets_config_path: &str) -> World {
     let planets = load_planets(planets_config_path);
 
     let mut world = World {
@@ -37,16 +34,33 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
         .into_iter()
         .map(|config| {
             // Convert the planet type string to the enum
-            let planet_type = match config.planet_type.as_str().to_lowercase().replace(" ", "").replace("-", "") {
+            let planet_type = match config
+                .planet_type
+                .as_str()
+                .to_lowercase()
+                .replace(" ", "")
+                .replace("-", "")
+            {
                 s if s.contains("agricultural") => planet_types::PlanetType::Agricultural,
-                s if s.contains("megacity") || s.contains("megacity") => planet_types::PlanetType::MegaCity,
+                s if s.contains("megacity") || s.contains("megacity") => {
+                    planet_types::PlanetType::MegaCity
+                }
                 s if s.contains("mining") => planet_types::PlanetType::Mining,
-                s if s.contains("pirate") && s.contains("station") => planet_types::PlanetType::PirateSpaceStation,
-                s if s.contains("research") && s.contains("outpost") => planet_types::PlanetType::ResearchOutpost,
+                s if s.contains("pirate") && s.contains("station") => {
+                    planet_types::PlanetType::PirateSpaceStation
+                }
+                s if s.contains("research") && s.contains("outpost") => {
+                    planet_types::PlanetType::ResearchOutpost
+                }
                 s if s.contains("industrial") => planet_types::PlanetType::Industrial,
-                s if s.contains("frontier") && s.contains("colony") => planet_types::PlanetType::FrontierColony,
+                s if s.contains("frontier") && s.contains("colony") => {
+                    planet_types::PlanetType::FrontierColony
+                }
                 _ => {
-                    eprintln!("Warning: Unknown planet type '{}', defaulting to Agricultural", config.planet_type);
+                    eprintln!(
+                        "Warning: Unknown planet type '{}', defaulting to Agricultural",
+                        config.planet_type
+                    );
                     planet_types::PlanetType::Agricultural
                 }
             };
@@ -57,7 +71,13 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
                 config.produces.clone()
             } else {
                 // Use default produces from planet type
-                planet_type.supplies().iter().map(|ct: &crate::simulation::commodity::CommodityType| ct.display_name().to_string()).collect()
+                planet_type
+                    .supplies()
+                    .iter()
+                    .map(|ct: &crate::simulation::commodity::CommodityType| {
+                        ct.display_name().to_string()
+                    })
+                    .collect()
             };
 
             let demands = if !config.demands.is_empty() {
@@ -65,17 +85,24 @@ fn load_planets(path: &str) -> Vec<orbits::Planet> {
                 config.demands.clone()
             } else {
                 // Use default demands from planet type
-                planet_type.demands().iter().map(|ct: &crate::simulation::commodity::CommodityType| ct.display_name().to_string()).collect()
+                planet_type
+                    .demands()
+                    .iter()
+                    .map(|ct: &crate::simulation::commodity::CommodityType| {
+                        ct.display_name().to_string()
+                    })
+                    .collect()
             };
 
             let market = initialize_market(&produces, &demands);
 
             orbits::Planet {
-                id: config.id,
+                id: config.id.clone(),
+                name: config.name.clone(),
                 orbit_radius: config.orbit_radius,
                 orbit_period: config.orbit_period,
                 position: orbits::Position::start(), // Initial position at turn 0
-                economy: economy::PlanetEconomy { 
+                economy: economy::PlanetEconomy {
                     market,
                     planet_type: planet_type.clone(),
                     active_events: Vec::new(),
@@ -92,28 +119,32 @@ fn initialize_market(
     demanded: &[String],
 ) -> HashMap<commodity::CommodityType, economy::MarketGood> {
     let mut market = HashMap::new();
-    
+
     for commodity_type in commodity::CommodityType::all() {
         // Convert string names to commodity types for comparison
-        let commodity_name = commodity_type.display_name().to_lowercase().replace(" ", "");
-        
-        let is_produced = produced.iter().any(|s|
-            s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
-            s.to_lowercase() == commodity_type.display_name().to_lowercase()
-        );
-        
-        let is_demanded = demanded.iter().any(|s|
-            s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name ||
-            s.to_lowercase() == commodity_type.display_name().to_lowercase()
-        );
-        
+        let commodity_name = commodity_type
+            .display_name()
+            .to_lowercase()
+            .replace(" ", "");
+
+        let is_produced = produced.iter().any(|s| {
+            s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name
+                || s.to_lowercase() == commodity_type.display_name().to_lowercase()
+        });
+
+        let is_demanded = demanded.iter().any(|s| {
+            s.to_lowercase().replace(" ", "").replace("_", "") == commodity_name
+                || s.to_lowercase() == commodity_type.display_name().to_lowercase()
+        });
+
         // Create market good with the new structure
-        let mut market_good = economy::MarketGood::new(&commodity_type, &planet_types::PlanetType::Agricultural);
-        
+        let mut market_good =
+            economy::MarketGood::new(&commodity_type, &planet_types::PlanetType::Agricultural);
+
         // Override the produced/demanded flags based on config
         market_good.is_produced = is_produced;
         market_good.is_demanded = is_demanded;
-        
+
         // Recalculate prices based on the new flags
         if is_produced {
             market_good.local_multiplier = 0.7; // Produced locally - lower price
@@ -124,11 +155,11 @@ fn initialize_market(
         } else {
             market_good.local_multiplier = 1.0; // Neutral
         }
-        
+
         market_good.calculate_prices();
         market.insert(commodity_type, market_good);
     }
-    
+
     market
 }
 
@@ -147,10 +178,7 @@ impl World {
         // Use current turn to calculate initial positions
         let current_turn = self.game_clock.current_turn;
         for planet in &mut self.planets {
-            planet.position = orbits::calculate_orbit_position(
-                planet.orbit_period,
-                current_turn,
-            );
+            planet.position = orbits::calculate_orbit_position(planet.orbit_period, current_turn);
         }
     }
 }
@@ -171,15 +199,21 @@ mod tests {
 
         // 2. Create and write mock config files
         let mut goods_file = File::create(&goods_path).expect("Failed to create goods file");
-        goods_file.write_all(b"
+        goods_file
+            .write_all(
+                b"
 - name: Food
   base_value: 10
 - name: Machinery
   base_value: 100
-").expect("Failed to write goods file");
+",
+            )
+            .expect("Failed to write goods file");
 
         let mut planets_file = File::create(&planets_path).expect("Failed to create planets file");
-        planets_file.write_all(b"
+        planets_file
+            .write_all(
+                b"
 - id: test_earth
   orbit_radius: 5
   orbit_period: 10
@@ -192,20 +226,23 @@ mod tests {
   planet_type: Mining
   produces: [Medicine]
   demands: [Water]
-").expect("Failed to write planets file");
+",
+            )
+            .expect("Failed to write planets file");
 
         // 3. Call the function we are testing
-        let world = initialize_world(
-            goods_path.to_str().unwrap(),
-            planets_path.to_str().unwrap(),
-        );
+        let world = initialize_world(goods_path.to_str().unwrap(), planets_path.to_str().unwrap());
 
         // 4. Assert the world state is correct
         assert_eq!(world.planets.len(), 2);
         assert_eq!(world.current_time, 0.0);
 
         // 5. Assert specific planet data is correct
-        let earth = world.planets.iter().find(|p| p.id == "test_earth").expect("Planet 'test_earth' not found");
+        let earth = world
+            .planets
+            .iter()
+            .find(|p| p.id == "test_earth")
+            .expect("Planet 'test_earth' not found");
         assert_eq!(earth.orbit_radius, 5);
         assert_eq!(earth.planet_type, planet_types::PlanetType::Agricultural);
 
@@ -219,7 +256,10 @@ mod tests {
         }
 
         // Find the medicine market on earth (demanded)
-        let earth_medicine_market = earth.economy.market.get(&commodity::CommodityType::Medicine);
+        let earth_medicine_market = earth
+            .economy
+            .market
+            .get(&commodity::CommodityType::Medicine);
         if let Some(earth_medicine_market) = earth_medicine_market {
             assert!(!earth_medicine_market.is_produced);
             assert!(earth_medicine_market.is_demanded);
@@ -227,12 +267,19 @@ mod tests {
             assert_eq!(earth_medicine_market.commodity_type.base_value(), 100);
         }
 
-        let mars = world.planets.iter().find(|p| p.id == "test_mars").expect("Planet 'test_mars' not found");
+        let mars = world
+            .planets
+            .iter()
+            .find(|p| p.id == "test_mars")
+            .expect("Planet 'test_mars' not found");
         assert_eq!(mars.planet_type, planet_types::PlanetType::Mining);
 
         // 6. Assert that initial positions have been calculated
         for planet in &world.planets {
-            let expected_pos = orbits::calculate_orbit_position(planet.orbit_period, world.game_clock.current_turn);
+            let expected_pos = orbits::calculate_orbit_position(
+                planet.orbit_period,
+                world.game_clock.current_turn,
+            );
             assert_eq!(planet.position, expected_pos);
         }
     }

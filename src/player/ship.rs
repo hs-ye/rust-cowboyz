@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ship {
-    pub speed: f64,           // Legacy field (kept for compatibility)
+    pub speed: f64,          // Legacy field (kept for compatibility)
     pub acceleration: u32,   // Ship acceleration in units/turn² (default: 1)
     pub cargo_capacity: u32, // Maximum cargo capacity
 }

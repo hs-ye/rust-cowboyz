@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 /// This represents the planet's position in its orbit at a given turn
 #[derive(Debug, Clone, PartialEq, Copy, Eq, Default, Serialize, Deserialize)]
 pub struct Position {
-    pub orbital_position: u32,  // Integer position in orbit (0 to orbital_period-1)
+    pub orbital_position: u32, // Integer position in orbit (0 to orbital_period-1)
 }
 
 impl Position {
@@ -17,15 +17,18 @@ impl Position {
 
     /// Creates a position at the starting point (position 0)
     pub fn start() -> Self {
-        Position { orbital_position: 0 }
+        Position {
+            orbital_position: 0,
+        }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Planet {
     pub id: String,
-    pub orbit_radius: u32,  // Integer distance from star (in arbitrary units)
-    pub orbit_period: u32,  // Turns to complete one orbit
+    pub name: String,      // Human-readable planet name
+    pub orbit_radius: u32, // Integer distance from star (in arbitrary units)
+    pub orbit_period: u32, // Turns to complete one orbit
     pub position: Position,
     pub economy: economy::PlanetEconomy,
     pub planet_type: PlanetType,
@@ -44,7 +47,8 @@ pub fn calculate_orbit_position(orbit_period: u32, current_turn: u32) -> Positio
 pub fn advance_planet_positions(planets: &mut [Planet]) {
     for planet in planets.iter_mut() {
         if planet.orbit_period > 0 {
-            planet.position.orbital_position = (planet.position.orbital_position + 1) % planet.orbit_period;
+            planet.position.orbital_position =
+                (planet.position.orbital_position + 1) % planet.orbit_period;
         }
     }
 }
@@ -76,10 +80,11 @@ mod tests {
         let mut planets = vec![
             Planet {
                 id: "earth".to_string(),
+                name: "Earth".to_string(),
                 orbit_radius: 5,
                 orbit_period: 10,
                 position: Position::new(5),
-                economy: PlanetEconomy { 
+                economy: PlanetEconomy {
                     market: HashMap::new(),
                     planet_type: PlanetType::Agricultural,
                     active_events: Vec::new(),
@@ -88,10 +93,11 @@ mod tests {
             },
             Planet {
                 id: "mars".to_string(),
+                name: "Mars".to_string(),
                 orbit_radius: 12,
                 orbit_period: 15,
                 position: Position::new(14),
-                economy: PlanetEconomy { 
+                economy: PlanetEconomy {
                     market: HashMap::new(),
                     planet_type: PlanetType::Mining,
                     active_events: Vec::new(),
@@ -112,20 +118,19 @@ mod tests {
     #[test]
     fn test_advance_planet_positions_zero_period() {
         // Edge case: planet with zero orbital period
-        let mut planets = vec![
-            Planet {
-                id: "station".to_string(),
-                orbit_radius: 3,
-                orbit_period: 0,
-                position: Position::new(5),
-                economy: PlanetEconomy { 
-                    market: HashMap::new(),
-                    planet_type: PlanetType::PirateSpaceStation,
-                    active_events: Vec::new(),
-                },
+        let mut planets = vec![Planet {
+            id: "station".to_string(),
+            name: "Pirate Station".to_string(),
+            orbit_radius: 3,
+            orbit_period: 0,
+            position: Position::new(5),
+            economy: PlanetEconomy {
+                market: HashMap::new(),
                 planet_type: PlanetType::PirateSpaceStation,
+                active_events: Vec::new(),
             },
-        ];
+            planet_type: PlanetType::PirateSpaceStation,
+        }];
 
         advance_planet_positions(&mut planets);
         // Should not change since orbit_period is 0

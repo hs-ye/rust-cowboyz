@@ -8,7 +8,7 @@ use std::fs;
 pub struct PlanetConfig {
     pub id: String,
     #[serde(default)]
-    pub name: String,        // Human-readable planet name
+    pub name: String, // Human-readable planet name
     pub orbit_radius: u32,   // Integer distance from star
     pub orbit_period: u32,   // Turns to complete one orbit
     pub planet_type: String, // Planet type as string, will be converted to enum

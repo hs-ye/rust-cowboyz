@@ -3,6 +3,7 @@
 # Planet types with their supply/demand patterns as specified in ADR 0005
 
 - id: earth
+  name: Earth
   orbit_radius: 5
   orbit_period: 10  # turns
   planet_type: Agricultural
@@ -11,6 +12,7 @@
   # demands: [Medicine, Firearms, Ammunition, Electronics]
 
 - id: mars
+  name: Mars
   orbit_radius: 8
   orbit_period: 15  # turns
   planet_type: Mega City
@@ -19,6 +21,7 @@
   # demands: [Water, Foodstuffs, Firearms, Ammunition]
 
 - id: ceres
+  name: Ceres
   orbit_radius: 12
   orbit_period: 20  # turns
   planet_type: Mining
@@ -27,6 +30,7 @@
   # demands: [Water, Foodstuffs, Medicine, Ammunition]
 
 - id: space_station_alpha
+  name: Space Station Alpha
   orbit_radius: 3
   orbit_period: 8  # turns
   planet_type: Pirate Space Station
@@ -35,6 +39,7 @@
   # demands: [Foodstuffs, Firearms, Medicine]
 
 - id: research_outpost_gamma
+  name: Research Outpost Gamma
   orbit_radius: 15
   orbit_period: 25  # turns
   planet_type: Research Outpost
@@ -43,6 +48,7 @@
   # demands: [Water, Foodstuffs]
 
 - id: industrial_hub_delta
+  name: Industrial Hub Delta
   orbit_radius: 10
   orbit_period: 18  # turns
   planet_type: Industrial
@@ -51,6 +57,7 @@
   # demands: [Water, Foodstuffs, Medicine]
 
 - id: frontier_colony_beta
+  name: Frontier Colony Beta
   orbit_radius: 20
   orbit_period: 30  # turns
   planet_type: Frontier Colony
