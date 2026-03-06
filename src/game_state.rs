@@ -2,12 +2,12 @@
 //! Based on ADR 0002: Movement Mechanics System
 //! Data models based on ADR 0006: Data Models/Schema for Space-Western Trading Game
 
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use crate::simulation::commodity::CommodityType;
-use crate::simulation::planet_types::PlanetType;
 use crate::simulation::economy::PlanetEconomy;
 use crate::simulation::orbits::Position;
+use crate::simulation::planet_types::PlanetType;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Game clock that tracks turns in the game
 /// The clock advances during travel and wait actions, synchronizing all game systems
@@ -38,7 +38,7 @@ impl GameClock {
     /// Returns the number of turns actually advanced (capped at total_turns)
     pub fn advance(&mut self, turns: u32) -> u32 {
         let new_turn = self.current_turn + turns;
-        let actual_advance = if new_turn > self.total_turns {
+        if new_turn > self.total_turns {
             // Cap at total_turns
             let remaining = self.total_turns.saturating_sub(self.current_turn);
             self.current_turn = self.total_turns;
@@ -46,8 +46,7 @@ impl GameClock {
         } else {
             self.current_turn = new_turn;
             turns
-        };
-        actual_advance
+        }
     }
 
     /// Get the number of turns remaining in the game
@@ -92,16 +91,18 @@ impl Default for GameClock {
 /// Represents a planet in the solar system with its orbital position and economy
 /// This is the main data structure for planets used in the game state
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Planet {
     pub id: String,
     pub name: String,
-    pub orbit_radius: u32,    // Integer distance from star (in arbitrary units)
-    pub orbit_period: u32,   // Turns to complete one orbit
-    pub position: Position,  // Current orbital position
+    pub orbit_radius: u32,  // Integer distance from star (in arbitrary units)
+    pub orbit_period: u32,  // Turns to complete one orbit
+    pub position: Position, // Current orbital position
     pub economy: PlanetEconomy,
     pub planet_type: PlanetType,
 }
 
+#[allow(dead_code)]
 impl Planet {
     /// Create a new planet with the given parameters
     pub fn new(
@@ -131,11 +132,13 @@ impl Planet {
 
 /// The solar system containing all planets
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct SolarSystem {
     pub planets: Vec<Planet>,
     pub name: String,
 }
 
+#[allow(dead_code)]
 impl SolarSystem {
     /// Create a new solar system with the given planets
     pub fn new(name: String, planets: Vec<Planet>) -> Self {
@@ -161,8 +164,9 @@ impl SolarSystem {
 /// Player's ship with cargo capacity and travel capabilities
 /// Based on ADR 0002: Movement Mechanics System
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Ship {
-    pub speed: f64,           // Legacy field (kept for compatibility)
+    pub speed: f64,          // Legacy field (kept for compatibility)
     pub acceleration: u32,   // Ship acceleration in units/turn² (default: 1)
     pub cargo_capacity: u32, // Maximum cargo capacity
     pub fuel: u32,           // Current fuel level
@@ -171,6 +175,7 @@ pub struct Ship {
     pub max_hull: u32,       // Maximum hull integrity
 }
 
+#[allow(dead_code)]
 impl Ship {
     /// Create a new ship with default acceleration of 1 unit/turn²
     pub fn new(speed: f64, cargo_capacity: u32) -> Self {
@@ -178,10 +183,10 @@ impl Ship {
             speed,
             acceleration: 1, // Default acceleration
             cargo_capacity,
-            fuel: 100,       // Default fuel
-            max_fuel: 100,   // Default max fuel
-            hull: 100,       // Default hull
-            max_hull: 100,   // Default max hull
+            fuel: 100,     // Default fuel
+            max_fuel: 100, // Default max fuel
+            hull: 100,     // Default hull
+            max_hull: 100, // Default max hull
         }
     }
 
@@ -255,11 +260,13 @@ impl Ship {
 
 /// Player's inventory/cargo hold
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct CargoHold {
     pub capacity: u32,
     pub commodities: HashMap<CommodityType, u32>,
 }
 
+#[allow(dead_code)]
 impl CargoHold {
     /// Create a new cargo hold with the given capacity
     pub fn new(capacity: u32) -> Self {
@@ -270,7 +277,11 @@ impl CargoHold {
     }
 
     /// Add a commodity to the cargo hold
-    pub fn add_commodity(&mut self, commodity_type: CommodityType, quantity: u32) -> Result<(), &'static str> {
+    pub fn add_commodity(
+        &mut self,
+        commodity_type: CommodityType,
+        quantity: u32,
+    ) -> Result<(), &'static str> {
         let current_total = self.total_cargo_space_used();
         if current_total + quantity > self.capacity {
             return Err("Not enough cargo space");
@@ -280,7 +291,11 @@ impl CargoHold {
     }
 
     /// Remove a commodity from the cargo hold
-    pub fn remove_commodity(&mut self, commodity_type: &CommodityType, quantity: u32) -> Result<u32, &'static str> {
+    pub fn remove_commodity(
+        &mut self,
+        commodity_type: &CommodityType,
+        quantity: u32,
+    ) -> Result<u32, &'static str> {
         match self.commodities.get_mut(commodity_type) {
             Some(current_qty) => {
                 if *current_qty < quantity {
@@ -292,7 +307,7 @@ impl CargoHold {
                     *current_qty -= quantity;
                 }
                 Ok(quantity)
-            },
+            }
             None => Err("Commodity not found in inventory"),
         }
     }
@@ -336,24 +351,26 @@ impl CargoHold {
 /// Player entity representing the user's game state
 /// Based on ADR 0006: Player Entity
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Player {
     pub money: u32,
-    pub location: String,       // Current planet ID
+    pub location: String, // Current planet ID
     pub ship: Ship,
     pub cargo: CargoHold,
-    pub visited_planets: Vec<String>,  // Track which planets have been visited
-    pub total_trades: u32,      // Total number of trades made
-    pub total_earnings: u32,    // Total money earned from trades
+    pub visited_planets: Vec<String>, // Track which planets have been visited
+    pub total_trades: u32,            // Total number of trades made
+    pub total_earnings: u32,          // Total money earned from trades
 }
 
+#[allow(dead_code)]
 impl Player {
     /// Create a new player with default values
     pub fn new() -> Self {
         Player {
-            money: 1000, // Starting money
+            money: 1000,                   // Starting money
             location: "earth".to_string(), // Starting planet
-            ship: Ship::new(10.0, 10), // Default ship speed and cargo capacity
-            cargo: CargoHold::new(10), // Default cargo hold capacity
+            ship: Ship::new(10.0, 10),     // Default ship speed and cargo capacity
+            cargo: CargoHold::new(10),     // Default cargo hold capacity
             visited_planets: vec!["earth".to_string()],
             total_trades: 0,
             total_earnings: 0,
@@ -361,12 +378,7 @@ impl Player {
     }
 
     /// Create a player with custom starting values
-    pub fn with_values(
-        money: u32,
-        location: String,
-        ship: Ship,
-        cargo_capacity: u32,
-    ) -> Self {
+    pub fn with_values(money: u32, location: String, ship: Ship, cargo_capacity: u32) -> Self {
         Player {
             money,
             location: location.clone(),
@@ -414,6 +426,7 @@ impl Player {
 
 /// Game settings and configuration
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct GameSettings {
     pub audio_enabled: bool,
     pub music_volume: f32,
@@ -438,6 +451,7 @@ impl Default for GameSettings {
 
 /// Game difficulty levels
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub enum GameDifficulty {
     Easy,
     Normal,
@@ -449,6 +463,7 @@ pub enum GameDifficulty {
     },
 }
 
+#[allow(dead_code)]
 impl GameDifficulty {
     /// Get the price volatility multiplier for this difficulty
     pub fn price_volatility_multiplier(&self) -> f64 {
@@ -456,7 +471,9 @@ impl GameDifficulty {
             GameDifficulty::Easy => 0.5,
             GameDifficulty::Normal => 1.0,
             GameDifficulty::Hard => 1.5,
-            GameDifficulty::Custom { price_volatility, .. } => *price_volatility,
+            GameDifficulty::Custom {
+                price_volatility, ..
+            } => *price_volatility,
         }
     }
 
@@ -483,6 +500,7 @@ impl GameDifficulty {
 
 /// Transaction record for tracking trades
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Transaction {
     pub turn: u32,
     pub planet_id: String,
@@ -494,6 +512,7 @@ pub struct Transaction {
 
 /// Type of transaction
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub enum TransactionType {
     Buy,
     Sell,
@@ -503,8 +522,9 @@ pub enum TransactionType {
 /// This is the main structure that gets serialized to localStorage
 /// Based on ADR 0006: Core Game State Structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct GameState {
-    pub version: String,           // Game state version for migration support
+    pub version: String, // Game state version for migration support
     pub player: Player,
     pub solar_system: SolarSystem,
     pub game_clock: GameClock,
@@ -514,6 +534,7 @@ pub struct GameState {
     pub game_over_reason: Option<String>,
 }
 
+#[allow(dead_code)]
 impl GameState {
     /// Create a new game state with default values
     pub fn new() -> Self {
@@ -573,22 +594,22 @@ impl GameState {
     /// Advance the game clock by a number of turns
     pub fn advance_turns(&mut self, turns: u32) -> u32 {
         let actual_advance = self.game_clock.advance(turns);
-        
+
         // Update planet positions based on new turn
         for planet in &mut self.solar_system.planets {
             planet.position = planet.calculate_position_at_turn(self.game_clock.current_turn);
         }
-        
+
         // Update market prices
         for planet in &mut self.solar_system.planets {
             planet.economy.update_market();
         }
-        
+
         // Check for game over
         if self.game_clock.is_game_over() {
             self.end_game("Game time has run out!".to_string());
         }
-        
+
         actual_advance
     }
 }
@@ -605,12 +626,14 @@ impl Default for GameState {
 
 /// Validation result with optional error message
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ValidationResult {
     pub is_valid: bool,
     pub errors: Vec<String>,
     pub warnings: Vec<String>,
 }
 
+#[allow(dead_code)]
 impl ValidationResult {
     /// Create a valid result
     pub fn valid() -> Self {
@@ -646,6 +669,7 @@ impl ValidationResult {
 
 /// Validate the game state for data integrity
 /// Based on ADR 0006: Implement validation functions to verify data integrity on load
+#[allow(dead_code)]
 pub fn validate_game_state(state: &GameState) -> ValidationResult {
     let mut result = ValidationResult::valid();
 
@@ -660,7 +684,11 @@ pub fn validate_game_state(state: &GameState) -> ValidationResult {
     }
 
     // Validate player location
-    if state.solar_system.get_planet(&state.player.location).is_none() {
+    if state
+        .solar_system
+        .get_planet(&state.player.location)
+        .is_none()
+    {
         result = result.with_error(format!(
             "Player location '{}' is not a valid planet",
             state.player.location
@@ -701,7 +729,12 @@ pub fn validate_game_state(state: &GameState) -> ValidationResult {
     }
 
     // Check for duplicate planet IDs
-    let planet_ids: Vec<&str> = state.solar_system.planets.iter().map(|p| p.id.as_str()).collect();
+    let planet_ids: Vec<&str> = state
+        .solar_system
+        .planets
+        .iter()
+        .map(|p| p.id.as_str())
+        .collect();
     let mut seen = std::collections::HashSet::new();
     for id in &planet_ids {
         if !seen.insert(id) {
@@ -723,6 +756,7 @@ pub fn validate_game_state(state: &GameState) -> ValidationResult {
 }
 
 /// Validate a player for data integrity
+#[allow(dead_code)]
 pub fn validate_player(player: &Player) -> ValidationResult {
     let mut result = ValidationResult::valid();
 
@@ -743,6 +777,7 @@ pub fn validate_player(player: &Player) -> ValidationResult {
 }
 
 /// Validate a planet for data integrity
+#[allow(dead_code)]
 pub fn validate_planet(planet: &Planet) -> ValidationResult {
     let mut result = ValidationResult::valid();
 
@@ -799,7 +834,7 @@ mod tests {
     fn test_turns_remaining() {
         let mut clock = GameClock::new(20);
         assert_eq!(clock.turns_remaining(), 19); // 20 - 1 = 19
-        
+
         clock.advance(10);
         assert_eq!(clock.turns_remaining(), 9); // 20 - 11 = 9
     }
@@ -808,7 +843,7 @@ mod tests {
     fn test_is_game_over() {
         let mut clock = GameClock::new(10);
         assert!(!clock.is_game_over());
-        
+
         clock.advance(10); // Advance to turn 11 (current_turn = 11)
         assert!(clock.is_game_over());
     }
@@ -817,7 +852,7 @@ mod tests {
     fn test_is_near_end() {
         let mut clock = GameClock::new(20);
         assert!(!clock.is_near_end(5));
-        
+
         clock.advance(16); // Advance to turn 17
         assert!(clock.is_near_end(5)); // 20 - 17 = 3 <= 5
     }
@@ -833,10 +868,10 @@ mod tests {
     fn test_progress() {
         let mut clock = GameClock::new(10);
         assert_eq!(clock.progress(), 0.1); // 1/10
-        
+
         clock.advance(4); // Advance to turn 5
         assert_eq!(clock.progress(), 0.5); // 5/10
-        
+
         clock.advance(10); // Should cap at 10
         assert_eq!(clock.progress(), 1.0); // 10/10
     }
@@ -854,7 +889,7 @@ mod tests {
     #[test]
     fn test_game_state_creation() {
         let state = GameState::new();
-        
+
         assert_eq!(state.version, "1.0.0");
         assert_eq!(state.player.money, 1000);
         assert_eq!(state.player.location, "earth");
@@ -872,16 +907,16 @@ mod tests {
             difficulty: GameDifficulty::Hard,
             ..Default::default()
         };
-        
+
         let state = GameState::with_settings(player, solar_system, settings);
-        
+
         assert_eq!(state.game_clock.total_turns, 5); // Hard difficulty has 5 turns
     }
 
     #[test]
     fn test_player_creation() {
         let player = Player::new();
-        
+
         assert_eq!(player.money, 1000);
         assert_eq!(player.location, "earth");
         assert_eq!(player.ship.cargo_capacity, 10);
@@ -895,11 +930,11 @@ mod tests {
     #[test]
     fn test_player_visit_planet() {
         let mut player = Player::new();
-        
+
         player.visit_planet("mars");
         assert!(player.visited_planets.contains(&"mars".to_string()));
         assert_eq!(player.visited_planets.len(), 2);
-        
+
         // Visiting same planet again should not add duplicate
         player.visit_planet("mars");
         assert_eq!(player.visited_planets.len(), 2);
@@ -908,15 +943,15 @@ mod tests {
     #[test]
     fn test_player_money_operations() {
         let mut player = Player::new();
-        
+
         // Test add_money
         player.add_money(500);
         assert_eq!(player.money, 1500);
-        
+
         // Test spend_money (successful)
         assert!(player.spend_money(300));
         assert_eq!(player.money, 1200);
-        
+
         // Test spend_money (insufficient funds)
         assert!(!player.spend_money(2000));
         assert_eq!(player.money, 1200); // Should not change
@@ -925,11 +960,11 @@ mod tests {
     #[test]
     fn test_player_record_trade() {
         let mut player = Player::new();
-        
+
         player.record_trade(100);
         assert_eq!(player.total_trades, 1);
         assert_eq!(player.total_earnings, 100);
-        
+
         player.record_trade(250);
         assert_eq!(player.total_trades, 2);
         assert_eq!(player.total_earnings, 350);
@@ -938,7 +973,7 @@ mod tests {
     #[test]
     fn test_ship_creation() {
         let ship = Ship::new(10.0, 50);
-        
+
         assert_eq!(ship.speed, 10.0);
         assert_eq!(ship.acceleration, 1);
         assert_eq!(ship.cargo_capacity, 50);
@@ -951,16 +986,16 @@ mod tests {
     #[test]
     fn test_ship_fuel_operations() {
         let mut ship = Ship::new(10.0, 50);
-        
+
         // Test travel (successful)
         assert!(ship.can_travel(50));
         ship.travel(50).unwrap();
         assert_eq!(ship.fuel, 50);
-        
+
         // Test travel (insufficient fuel)
         assert!(!ship.can_travel(60));
         assert!(ship.travel(60).is_err());
-        
+
         // Test refuel
         ship.refuel(30);
         assert_eq!(ship.fuel, 80); // 50 + 30 = 80, capped at max_fuel (100)
@@ -969,15 +1004,15 @@ mod tests {
     #[test]
     fn test_ship_hull_operations() {
         let mut ship = Ship::new(10.0, 50);
-        
+
         // Test take damage
         ship.take_damage(30);
         assert_eq!(ship.hull, 70);
-        
+
         // Test repair
         ship.repair(20);
         assert_eq!(ship.hull, 90);
-        
+
         // Test is_destroyed
         ship.take_damage(100);
         assert!(ship.is_destroyed());
@@ -986,28 +1021,28 @@ mod tests {
     #[test]
     fn test_cargo_hold_operations() {
         let mut cargo = CargoHold::new(20);
-        
+
         // Test add commodity
         cargo.add_commodity(CommodityType::Water, 5).unwrap();
         assert_eq!(cargo.get_quantity(&CommodityType::Water), 5);
         assert_eq!(cargo.total_cargo_space_used(), 5);
-        
+
         // Test add more of same commodity
         cargo.add_commodity(CommodityType::Water, 3).unwrap();
         assert_eq!(cargo.get_quantity(&CommodityType::Water), 8);
-        
+
         // Test add different commodity
         cargo.add_commodity(CommodityType::Foodstuffs, 4).unwrap();
         assert_eq!(cargo.total_cargo_space_used(), 12);
-        
+
         // Test capacity exceeded
         let mut small_cargo = CargoHold::new(5);
         assert!(small_cargo.add_commodity(CommodityType::Water, 10).is_err());
-        
+
         // Test remove commodity
         cargo.remove_commodity(&CommodityType::Water, 3).unwrap();
         assert_eq!(cargo.get_quantity(&CommodityType::Water), 5);
-        
+
         // Test remove all of commodity
         cargo.remove_commodity(&CommodityType::Water, 5).unwrap();
         assert!(!cargo.contains(&CommodityType::Water));
@@ -1019,17 +1054,17 @@ mod tests {
         assert_eq!(GameDifficulty::Easy.price_volatility_multiplier(), 0.5);
         assert_eq!(GameDifficulty::Easy.starting_money(), 2000);
         assert_eq!(GameDifficulty::Easy.turn_limit(), 20);
-        
+
         // Test Normal
         assert_eq!(GameDifficulty::Normal.price_volatility_multiplier(), 1.0);
         assert_eq!(GameDifficulty::Normal.starting_money(), 1000);
         assert_eq!(GameDifficulty::Normal.turn_limit(), 10);
-        
+
         // Test Hard
         assert_eq!(GameDifficulty::Hard.price_volatility_multiplier(), 1.5);
         assert_eq!(GameDifficulty::Hard.starting_money(), 500);
         assert_eq!(GameDifficulty::Hard.turn_limit(), 5);
-        
+
         // Test Custom
         let custom = GameDifficulty::Custom {
             price_volatility: 2.0,
@@ -1072,7 +1107,7 @@ mod tests {
         );
         let result = validate_planet(&planet);
         assert!(result.is_valid);
-        
+
         // Invalid planet (empty ID)
         let invalid_planet = Planet {
             id: "".to_string(),
@@ -1093,7 +1128,7 @@ mod tests {
         let state = GameState::new();
         let json = serde_json::to_string(&state).unwrap();
         let loaded: GameState = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(loaded.version, state.version);
         assert_eq!(loaded.player.money, state.player.money);
         assert_eq!(loaded.game_clock.total_turns, state.game_clock.total_turns);
@@ -1102,7 +1137,7 @@ mod tests {
     #[test]
     fn test_game_state_advance_turns() {
         let mut state = GameState::new();
-        
+
         // Add a planet to the solar system
         let planet = Planet::new(
             "earth".to_string(),
@@ -1112,12 +1147,12 @@ mod tests {
             PlanetType::Agricultural,
         );
         state.solar_system.planets.push(planet);
-        
+
         // Advance turns
         let advanced = state.advance_turns(3);
         assert_eq!(advanced, 3);
         assert_eq!(state.game_clock.current_turn, 4);
-        
+
         // Game should not be over yet
         assert!(!state.is_game_over);
     }
@@ -1125,9 +1160,9 @@ mod tests {
     #[test]
     fn test_game_state_end_game() {
         let mut state = GameState::new();
-        
+
         state.end_game("Test game over".to_string());
-        
+
         assert!(state.is_game_over);
         assert_eq!(state.game_over_reason, Some("Test game over".to_string()));
         assert_eq!(state.game_clock.current_turn, state.game_clock.total_turns);
@@ -1136,7 +1171,7 @@ mod tests {
     #[test]
     fn test_transaction_record() {
         let mut state = GameState::new();
-        
+
         let transaction = Transaction {
             turn: 1,
             planet_id: "earth".to_string(),
@@ -1145,9 +1180,9 @@ mod tests {
             price_per_unit: 10,
             transaction_type: TransactionType::Buy,
         };
-        
+
         state.record_transaction(transaction);
-        
+
         assert_eq!(state.transaction_history.len(), 1);
         assert_eq!(state.transaction_history[0].turn, 1);
         assert_eq!(state.transaction_history[0].commodity, CommodityType::Water);

@@ -1,4 +1,4 @@
-use crate::simulation::commodity::{CommodityType, CommodityInventory};
+use crate::simulation::commodity::{CommodityInventory, CommodityType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,14 +15,22 @@ impl CargoHold {
         }
     }
 
-    pub fn add_commodity(&mut self, commodity_type: CommodityType, quantity: u32) -> Result<(), String> {
+    pub fn add_commodity(
+        &mut self,
+        commodity_type: CommodityType,
+        quantity: u32,
+    ) -> Result<(), String> {
         match self.commodities.add_commodity(commodity_type, quantity) {
             Ok(()) => Ok(()),
             Err(e) => Err(e.to_string()),
         }
     }
 
-    pub fn remove_commodity(&mut self, commodity_type: CommodityType, quantity: u32) -> Result<(), String> {
+    pub fn remove_commodity(
+        &mut self,
+        commodity_type: CommodityType,
+        quantity: u32,
+    ) -> Result<(), String> {
         match self.commodities.remove_commodity(&commodity_type, quantity) {
             Ok(_) => Ok(()),
             Err(e) => Err(e.to_string()),
