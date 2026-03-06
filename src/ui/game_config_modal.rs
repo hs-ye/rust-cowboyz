@@ -27,6 +27,9 @@ use crate::game_state::GameDifficulty;
 #[cfg(feature = "web")]
 use wasm_bindgen::JsCast;
 
+#[cfg(not(feature = "web"))]
+use crate::game_state::GameDifficulty;
+
 /// Signal to control modal visibility
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameConfigModalState {

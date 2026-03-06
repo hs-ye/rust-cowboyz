@@ -5,8 +5,16 @@
 
 #[cfg(feature = "web")]
 use crate::simulation::orbits::Position;
+
+#[cfg(not(feature = "web"))]
+use crate::simulation::orbits::Position;
+
 #[cfg(feature = "web")]
 use crate::simulation::planet_types::PlanetType;
+
+#[cfg(not(feature = "web"))]
+use crate::simulation::planet_types::PlanetType;
+
 #[cfg(feature = "web")]
 use leptos::html::Canvas;
 #[cfg(feature = "web")]

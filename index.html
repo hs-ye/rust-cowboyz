@@ -306,6 +306,249 @@
             color: var(--accent-green);
         }
 
+        /* Market Panel Enhancements */
+        .commodity-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .commodity-name {
+            font-weight: 500;
+        }
+
+        .player-qty {
+            font-size: 0.75rem;
+            color: var(--accent-purple);
+        }
+
+        .commodity-tags {
+            display: flex;
+            gap: 0.35rem;
+            margin-top: 0.15rem;
+        }
+
+        .tag {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .tag.produced {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+        }
+
+        .tag.demanded {
+            background: rgba(255, 107, 53, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .market-preview-notice {
+            background: rgba(123, 47, 247, 0.1);
+            border: 1px solid var(--accent-purple);
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+            text-align: center;
+        }
+
+        .trading-controls {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .trade-instructions {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .trade-message {
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            text-align: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .trade-message.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .trade-message.error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        /* Inventory Panel Enhancements */
+        .cargo-stats {
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-value.value {
+            color: var(--accent-green);
+        }
+
+        .inventory-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .item-name {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
+        .item-qty {
+            color: var(--accent-purple);
+            font-weight: 600;
+            margin-right: 0.75rem;
+        }
+
+        .item-value {
+            color: var(--accent-green);
+            font-size: 0.85rem;
+        }
+
+        /* Trade Modal */
+        .trade-modal {
+            max-width: 400px;
+        }
+
+        .trade-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .price-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .price-label {
+            color: var(--text-secondary);
+        }
+
+        .price-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .quantity-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .quantity-label {
+            color: var(--text-secondary);
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .qty-btn:hover:not(:disabled) {
+            background: var(--bg-panel-hover);
+            border-color: var(--accent-cyan);
+        }
+
+        .qty-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .qty-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .total-cost {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+            border: 1px solid var(--accent-cyan);
+        }
+
+        .total-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .total-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .btn-buy {
+            background: linear-gradient(135deg, var(--accent-red), #ff6b6b);
+        }
+
+        .btn-buy:hover {
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        .btn-sell {
+            background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+        }
+
+        .btn-sell:hover {
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+        }
+
         /* Actions */
         .actions {
             display: flex;

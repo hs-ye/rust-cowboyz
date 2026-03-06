@@ -6,6 +6,7 @@ use leptos::prelude::*;
 use leptos_meta::{Title, Meta};
 use crate::ui::solar_map::{SolarMap, MapPlanet};
 use crate::ui::game_config_modal::{GameConfigModal, GameConfig};
+use crate::ui::market_panel::{MarketPanel, InventoryPanel};
 use crate::simulation::planet_types::PlanetType;
 use crate::game_state::{GameState, GameDifficulty, GameSettings, Player, Ship, CargoHold, SolarSystem, Planet, GameClock, validate_game_state, ValidationResult};
 use crate::assets::save_game::{save_game_to_browser, load_game_from_browser, has_saved_game, LOCAL_STORAGE_KEY, SaveLoadError};
@@ -369,59 +370,14 @@ fn App() -> impl IntoView {
                         </div>
                     </div>
 
-                    // Inventory Panel
-                    <div class="panel inventory-panel">
-                        <div class="panel-header">
-                            <h3>"库存" </h3>
-                            <span class="panel-subtitle">"Inventory"</span>
-                        </div>
-                        <div class="panel-content">
-                            <div class="inventory-empty">
-                                <p>"货舱为空"</p>
-                                <p class="hint">"Cargo hold is empty"</p>
-                            </div>
-                            <div class="inventory-list">
-                                // Placeholder inventory items
-                            </div>
-                        </div>
-                    </div>
+                    // Inventory Panel - using new component
+                    <InventoryPanel game_state={game_state} />
 
-                    // Market Panel
-                    <div class="panel market-panel">
-                        <div class="panel-header">
-                            <h3>"市场" </h3>
-                            <span class="panel-subtitle">"Market - Earth"</span>
-                        </div>
-                        <div class="panel-content">
-                            <div class="market-table">
-                                <div class="market-header">
-                                    <span>"商品 Item"</span>
-                                    <span>"买入 Buy"</span>
-                                    <span>"卖出 Sell"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"水 Water"</span>
-                                    <span class="buy-price">"$10"</span>
-                                    <span class="sell-price">"$8"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"食物 Food"</span>
-                                    <span class="buy-price">"$25"</span>
-                                    <span class="sell-price">"$20"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"矿石 Ore"</span>
-                                    <span class="buy-price">"$50"</span>
-                                    <span class="sell-price">"$40"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"电子元件 Electronics"</span>
-                                    <span class="buy-price">"$100"</span>
-                                    <span class="sell-price">"$80"</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    // Market Panel - using new component
+                    <MarketPanel 
+                        game_state={game_state} 
+                        selected_planet={selected_planet}
+                    />
                 </div>
             </div>
 
