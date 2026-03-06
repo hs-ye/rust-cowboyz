@@ -357,22 +357,52 @@ fn App() -> impl IntoView {
                         <div class="panel-header">
                             <h3>"玩家状态" </h3>
                             <span class="panel-subtitle">"Player Status"</span>
+                            <div class="info-tooltip">
+                                <span class="info-icon">?</span>
+                                <div class="tooltip-content">
+                                    "Track your credits, location, and game progress. Your reputation increases as you complete trades and missions."
+                                </div>
+                            </div>
                         </div>
                         <div class="panel-content">
                             <div class="stat-row">
-                                <span class="stat-label">"资金 Credits:"</span>
+                                <span class="stat-label">
+                                    "资金 Credits:"
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">"Use credits to buy goods, fuel, and ship upgrades. Earn money by trading between planets."</span>
+                                    </span>
+                                </span>
                                 <span class="stat-value credits"> {move || format!("${}", money())}</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"位置 Location:"</span>
+                                <span class="stat-label">
+                                    "位置 Location:"
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">"Your current planet in the solar system. Click planets on the map to travel."</span>
+                                    </span>
+                                </span>
                                 <span class="stat-value location">{location}</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"回合 Turn:"</span>
+                                <span class="stat-label">
+                                    "回合 Turn:"
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">"Each turn represents time passing in the game. Some actions advance turns (travel, certain events)."</span>
+                                    </span>
+                                </span>
                                 <span class="stat-value turn">{turn}</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"声望 Reputation:"</span>
+                                <span class="stat-label">
+                                    "声望 Reputation:"
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">"Build reputation by completing trades. Higher reputation unlocks better prices and exclusive goods."</span>
+                                    </span>
+                                </span>
                                 <span class="stat-value">"新秀 Rookie"</span>
                             </div>
                         </div>
@@ -454,17 +484,35 @@ fn App() -> impl IntoView {
                         <div class="panel-header">
                             <h3>"飞船状态" </h3>
                             <span class="panel-subtitle">"Ship Status"</span>
+                            <div class="info-tooltip">
+                                <span class="info-icon">?</span>
+                                <div class="tooltip-content">
+                                    "Monitor your ship's fuel and cargo capacity. Refuel at stations, upgrade your cargo hold for more trading space."
+                                </div>
+                            </div>
                         </div>
                         <div class="panel-content">
                             <div class="stat-row">
-                                <span class="stat-label">"燃料 Fuel:"</span>
+                                <span class="stat-label">
+                                    "燃料 Fuel:"
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">"Fuel is consumed when traveling between planets. The farther the distance, the more fuel required."</span>
+                                    </span>
+                                </span>
                                 <span class="stat-value fuel"> {fuel()} "/ 100"</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill fuel-fill" style={move || format!("width: {}%", fuel())}></div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"货舱 Cargo:"</span>
+                                <span class="stat-label">
+                                    "货舱 Cargo:"
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">"Your cargo hold capacity. Buy goods at low prices and sell at high prices to make profit."</span>
+                                    </span>
+                                </span>
                                 <span class="stat-value"> {cargo_used()} "/ " {cargo_capacity()}</span>
                             </div>
                             <div class="progress-bar">
@@ -499,6 +547,12 @@ fn App() -> impl IntoView {
                         <div class="panel-header">
                             <h3>"市场" </h3>
                             <span class="panel-subtitle">"Market - Earth"</span>
+                            <div class="info-tooltip">
+                                <span class="info-icon">?</span>
+                                <div class="tooltip-content">
+                                    "Buy goods at low prices and sell at high prices across different planets. Prices vary by planet type and economy."
+                                </div>
+                            </div>
                         </div>
                         <div class="panel-content">
                             <div class="market-table">
@@ -535,23 +589,43 @@ fn App() -> impl IntoView {
 
             // Action buttons with save/load
             <div class="actions">
-                <button class="action-btn" on:click={on_add_money}>
+                <button 
+                    class="action-btn" 
+                    on:click={on_add_money}
+                    title="Add test money (debug feature)"
+                >
                     <span class="btn-icon">"💰"</span>
                     <span>"测试: 增加资金"</span>
                 </button>
-                <button class="action-btn" on:click={on_advance_turn}>
+                <button 
+                    class="action-btn" 
+                    on:click={on_advance_turn}
+                    title="Advance to next turn"
+                >
                     <span class="btn-icon">"⏱"</span>
                     <span>"下一回合"</span>
                 </button>
-                <button class="action-btn save-btn" on:click={on_manual_save}>
+                <button 
+                    class="action-btn save-btn" 
+                    on:click={on_manual_save}
+                    title="Save your current game progress to browser"
+                >
                     <span class="btn-icon">"💾"</span>
                     <span>"保存游戏"</span>
                 </button>
-                <button class="action-btn load-btn" on:click={on_manual_load}>
+                <button 
+                    class="action-btn load-btn" 
+                    on:click={on_manual_load}
+                    title="Load saved game from browser"
+                >
                     <span class="btn-icon">"📂"</span>
                     <span>"加载游戏"</span>
                 </button>
-                <button class="action-btn" on:click={on_new_game_click}>
+                <button 
+                    class="action-btn" 
+                    on:click={on_new_game_click}
+                    title="Start a new game (warning: will overwrite current game)"
+                >
                     <span class="btn-icon">"⚙"</span>
                     <span>"新游戏"</span>
                 </button>
