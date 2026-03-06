@@ -7,18 +7,27 @@ use leptos_meta::{Title, Meta};
 use crate::ui::solar_map::{SolarMap, MapPlanet};
 use crate::ui::game_config_modal::{GameConfigModal, GameConfig};
 use crate::simulation::planet_types::PlanetType;
-use crate::game_state::GameDifficulty;
+use crate::game_state::{GameState, GameDifficulty, GameSettings, Player, Ship, CargoHold, SolarSystem, Planet, GameClock, validate_game_state, ValidationResult};
+use crate::assets::save_game::{save_game_to_browser, load_game_from_browser, has_saved_game, LOCAL_STORAGE_KEY, SaveLoadError};
 
 /// Main application component with 60/40 split-screen layout
 #[component]
 fn App() -> impl IntoView {
-    // Create reactive game state
-    let (money, set_money) = signal(1000);
-    let (location, set_location) = signal("earth".to_string());
-    let (turn, set_turn) = signal(1);
-    let (fuel, set_fuel) = signal(100);
-    let (cargo_capacity, set_cargo_capacity) = signal(50);
-    let (cargo_used, set_cargo_used) = signal(0);
+    // Create reactive game state - using a stored value that wraps GameState
+    let (game_state, set_game_state) = signal(GameState::new());
+    
+    // Derived signals for UI display
+    let money = Signal::derive(move || game_state.get().player.money as i32);
+    let location = Signal::derive(move || game_state.get().player.location.clone());
+    let turn = Signal::derive(move || game_state.get().game_clock.current_turn);
+    let fuel = Signal::derive(move || game_state.get().player.ship.fuel as i32);
+    let cargo_capacity = Signal::derive(move || game_state.get().player.ship.cargo_capacity as i32);
+    let cargo_used = Signal::derive(move || game_state.get().player.cargo.total_cargo_space_used() as i32);
+    
+    // Save status for UI feedback
+    let (save_status, set_save_status) = signal(Option::<String>::None);
+    let (load_error, set_load_error) = signal(Option::<String>::None);
+    let (is_loading, set_is_loading) = signal(true);
 
     // Selected planet for info panel
     let (selected_planet, set_selected_planet) = signal(Option::<String>::None);
@@ -27,6 +36,89 @@ fn App() -> impl IntoView {
     let (is_modal_open, set_is_modal_open) = signal(false);
     let (has_existing_game, set_has_existing_game) = signal(false);
 
+    // Initialize game state from localStorage on mount
+    let initialize_game = move || {
+        set_is_loading.set(true);
+        
+        // Check if there's a saved game
+        if has_saved_game() {
+            match load_game_from_browser() {
+                Ok(loaded_state) => {
+                    let validation = validate_game_state(&loaded_state);
+                    if validation.is_valid {
+                        set_game_state.set(loaded_state);
+                        set_has_existing_game.set(true);
+                        set_load_error.set(None);
+                    } else {
+                        set_load_error.set(Some(format!("Validation failed: {}", validation.errors.join(", "))));
+                        // Start with new game if validation fails
+                        set_game_state.set(GameState::new());
+                    }
+                }
+                Err(e) => {
+                    set_load_error.set(Some(format!("Failed to load game: {}", e)));
+                    set_game_state.set(GameState::new());
+                }
+            }
+        } else {
+            set_game_state.set(GameState::new());
+        }
+        set_is_loading.set(false);
+    };
+
+    // Run initialization on mount
+    on_mount(initialize_game);
+
+    // Auto-save function - triggers on significant game actions
+    let auto_save = move || {
+        let current_state = game_state.get();
+        match save_game_to_browser(&current_state) {
+            Ok(()) => {
+                set_save_status.set(Some("Auto-saved".to_string()));
+                // Clear status after 2 seconds
+                set_timeout(move || set_save_status.set(None), 2000);
+            }
+            Err(e) => {
+                set_save_status.set(Some(format!("Auto-save failed: {}", e)));
+            }
+        }
+    };
+
+    // Manual save handler
+    let on_manual_save = move |_| {
+        let current_state = game_state.get();
+        match save_game_to_browser(&current_state) {
+            Ok(()) => {
+                set_save_status.set(Some("Game saved!".to_string()));
+                set_timeout(move || set_save_status.set(None), 2000);
+            }
+            Err(e) => {
+                set_save_status.set(Some(format!("Save failed: {}", e)));
+            }
+        }
+    };
+
+    // Manual load handler
+    let on_manual_load = move |_| {
+        match load_game_from_browser() {
+            Ok(loaded_state) => {
+                let validation = validate_game_state(&loaded_state);
+                if validation.is_valid {
+                    set_game_state.set(loaded_state);
+                    set_has_existing_game.set(true);
+                    set_load_error.set(None);
+                    set_save_status.set(Some("Game loaded!".to_string()));
+                    set_timeout(move || set_save_status.set(None), 2000);
+                } else {
+                    set_load_error.set(Some(format!("Validation failed: {}", validation.errors.join(", "))));
+                }
+            }
+            Err(e) => {
+                set_load_error.set(Some(format!("Load failed: {}", e)));
+            }
+        }
+    };
+
     // Handle new game button click
     let on_new_game_click = move |_| {
         set_is_modal_open.set(true);
@@ -34,15 +126,45 @@ fn App() -> impl IntoView {
 
     // Handle game start from modal
     let on_game_start = move |config: GameConfig| {
-        // Reset game state with new configuration
-        set_money.set(config.starting_credits as i32);
-        set_location.set("earth".to_string());
-        set_turn.set(1);
-        set_fuel.set(100);
-        set_cargo_capacity.set(50);
-        set_cargo_used.set(0);
+        // Create new game state with configuration
+        let difficulty = match config.difficulty.as_str() {
+            "easy" => GameDifficulty::Easy,
+            "hard" => GameDifficulty::Hard,
+            _ => GameDifficulty::Normal,
+        };
+        
+        let settings = GameSettings {
+            difficulty,
+            ..Default::default()
+        };
+        
+        let total_turns = settings.difficulty.turn_limit();
+        
+        let new_state = GameState {
+            version: "1.0.0".to_string(),
+            player: Player {
+                money: settings.difficulty.starting_money(),
+                location: "earth".to_string(),
+                ship: Ship::new(10.0, 50),
+                cargo: CargoHold::new(50),
+                visited_planets: vec!["earth".to_string()],
+                total_trades: 0,
+                total_earnings: 0,
+            },
+            solar_system: create_sample_solar_system(),
+            game_clock: GameClock::new(total_turns),
+            settings,
+            transaction_history: Vec::new(),
+            is_game_over: false,
+            game_over_reason: None,
+        };
+        
+        set_game_state.set(new_state);
         set_has_existing_game.set(true);
         set_selected_planet.set(None);
+        
+        // Auto-save after starting new game
+        auto_save();
     };
 
     // Handle modal close
@@ -51,70 +173,17 @@ fn App() -> impl IntoView {
     };
 
     // Create sample planets for the solar map
-    let planets = vec![
-        MapPlanet {
-            id: "earth".to_string(),
-            name: "Earth".to_string(),
-            orbit_radius: 5,
-            orbit_period: 10,
-            position: crate::simulation::orbits::Position::start(),
-            planet_type: PlanetType::Agricultural,
-        },
-        MapPlanet {
-            id: "mars".to_string(),
-            name: "Mars".to_string(),
-            orbit_radius: 10,
-            orbit_period: 15,
-            position: crate::simulation::orbits::Position::new(5),
-            planet_type: PlanetType::Mining,
-        },
-        MapPlanet {
-            id: "jupiter".to_string(),
-            name: "Jupiter".to_string(),
-            orbit_radius: 18,
-            orbit_period: 20,
-            position: crate::simulation::orbits::Position::new(10),
-            planet_type: PlanetType::Industrial,
-        },
-        MapPlanet {
-            id: "venus".to_string(),
-            name: "Venus".to_string(),
-            orbit_radius: 7,
-            orbit_period: 8,
-            position: crate::simulation::orbits::Position::new(3),
-            planet_type: PlanetType::MegaCity,
-        },
-        MapPlanet {
-            id: "titan".to_string(),
-            name: "Titan".to_string(),
-            orbit_radius: 25,
-            orbit_period: 30,
-            position: crate::simulation::orbits::Position::new(15),
-            planet_type: PlanetType::ResearchOutpost,
-        },
-        MapPlanet {
-            id: "pirate_station".to_string(),
-            name: "Pirate Station".to_string(),
-            orbit_radius: 30,
-            orbit_period: 25,
-            position: crate::simulation::orbits::Position::new(20),
-            planet_type: PlanetType::PirateSpaceStation,
-        },
-        MapPlanet {
-            id: "frontier".to_string(),
-            name: "Frontier Colony".to_string(),
-            orbit_radius: 35,
-            orbit_period: 40,
-            position: crate::simulation::orbits::Position::new(25),
-            planet_type: PlanetType::FrontierColony,
-        },
-    ];
+    let planets = create_map_planets();
 
     // Handle planet selection
     let on_planet_select = move |planet_id: String| {
         set_selected_planet.set(Some(planet_id.clone()));
         // Update location to selected planet (for demo purposes)
-        set_location.set(planet_id);
+        set_game_state.update(|state| {
+            state.player.location = planet_id.clone();
+        });
+        // Auto-save after significant action (changing location)
+        auto_save();
     };
 
     // Get selected planet info for display
@@ -122,6 +191,24 @@ fn App() -> impl IntoView {
         selected_planet.get().and_then(|id| {
             planets.iter().find(|p| p.id == id).cloned()
         })
+    };
+
+    // Handle turn advance with auto-save
+    let on_advance_turn = move |_| {
+        set_game_state.update(|state| {
+            state.advance_turns(1);
+        });
+        // Auto-save after turn advance
+        auto_save();
+    };
+
+    // Handle money change with auto-save
+    let on_add_money = move |_| {
+        set_game_state.update(|state| {
+            state.player.money += 100;
+        });
+        // Auto-save after significant action
+        auto_save();
     };
 
     view! {
@@ -132,7 +219,35 @@ fn App() -> impl IntoView {
             <header class="app-header">
                 <h1>"太空牛仔" </h1>
                 <span class="subtitle">"Space-Western Trading Game"</span>
+                // Save status indicator
+                {move || {
+                    save_status.get().map(|status| {
+                        view! {
+                            <span class="save-status">{status}</span>
+                        }
+                    })
+                }}
             </header>
+
+            // Loading state
+            {move || {
+                if is_loading.get() {
+                    view! {
+                        <div class="loading">"Loading game..."</div>
+                    }
+                } else {
+                    view! { <></> }
+                }
+            }}
+
+            // Load error display
+            {move || {
+                load_error.get().map(|error| {
+                    view! {
+                        <div class="error-message">{"Error: " {error}}</div>
+                    }
+                })
+            }}
 
             <div class="split-layout">
                 // Left side (60%): Solar System Map
@@ -310,15 +425,23 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            // Action buttons
+            // Action buttons with save/load
             <div class="actions">
-                <button class="action-btn" on:click={move |_| set_money.update(|m| *m += 100)}>
+                <button class="action-btn" on:click={on_add_money}>
                     <span class="btn-icon">"💰"</span>
                     <span>"测试: 增加资金"</span>
                 </button>
-                <button class="action-btn" on:click={move |_| set_turn.update(|t| *t += 1)}>
+                <button class="action-btn" on:click={on_advance_turn}>
                     <span class="btn-icon">"⏱"</span>
                     <span>"下一回合"</span>
+                </button>
+                <button class="action-btn save-btn" on:click={on_manual_save}>
+                    <span class="btn-icon">"💾"</span>
+                    <span>"保存游戏"</span>
+                </button>
+                <button class="action-btn load-btn" on:click={on_manual_load}>
+                    <span class="btn-icon">"📂"</span>
+                    <span>"加载游戏"</span>
                 </button>
                 <button class="action-btn" on:click={on_new_game_click}>
                     <span class="btn-icon">"⚙"</span>
@@ -342,6 +465,126 @@ fn App() -> impl IntoView {
             }
         }}
     }
+}
+
+/// Helper function to create sample solar system
+fn create_sample_solar_system() -> SolarSystem {
+    SolarSystem::new(
+        "Sol System".to_string(),
+        vec![
+            Planet::new(
+                "earth".to_string(),
+                "Earth".to_string(),
+                5,
+                10,
+                PlanetType::Agricultural,
+            ),
+            Planet::new(
+                "mars".to_string(),
+                "Mars".to_string(),
+                10,
+                15,
+                PlanetType::Mining,
+            ),
+            Planet::new(
+                "jupiter".to_string(),
+                "Jupiter".to_string(),
+                18,
+                20,
+                PlanetType::Industrial,
+            ),
+            Planet::new(
+                "venus".to_string(),
+                "Venus".to_string(),
+                7,
+                8,
+                PlanetType::MegaCity,
+            ),
+            Planet::new(
+                "titan".to_string(),
+                "Titan".to_string(),
+                25,
+                30,
+                PlanetType::ResearchOutpost,
+            ),
+            Planet::new(
+                "pirate_station".to_string(),
+                "Pirate Station".to_string(),
+                30,
+                25,
+                PlanetType::PirateSpaceStation,
+            ),
+            Planet::new(
+                "frontier".to_string(),
+                "Frontier Colony".to_string(),
+                35,
+                40,
+                PlanetType::FrontierColony,
+            ),
+        ],
+    )
+}
+
+/// Helper function to create map planets for UI
+fn create_map_planets() -> Vec<MapPlanet> {
+    vec![
+        MapPlanet {
+            id: "earth".to_string(),
+            name: "Earth".to_string(),
+            orbit_radius: 5,
+            orbit_period: 10,
+            position: crate::simulation::orbits::Position::start(),
+            planet_type: PlanetType::Agricultural,
+        },
+        MapPlanet {
+            id: "mars".to_string(),
+            name: "Mars".to_string(),
+            orbit_radius: 10,
+            orbit_period: 15,
+            position: crate::simulation::orbits::Position::new(5),
+            planet_type: PlanetType::Mining,
+        },
+        MapPlanet {
+            id: "jupiter".to_string(),
+            name: "Jupiter".to_string(),
+            orbit_radius: 18,
+            orbit_period: 20,
+            position: crate::simulation::orbits::Position::new(10),
+            planet_type: PlanetType::Industrial,
+        },
+        MapPlanet {
+            id: "venus".to_string(),
+            name: "Venus".to_string(),
+            orbit_radius: 7,
+            orbit_period: 8,
+            position: crate::simulation::orbits::Position::new(3),
+            planet_type: PlanetType::MegaCity,
+        },
+        MapPlanet {
+            id: "titan".to_string(),
+            name: "Titan".to_string(),
+            orbit_radius: 25,
+            orbit_period: 30,
+            position: crate::simulation::orbits::Position::new(15),
+            planet_type: PlanetType::ResearchOutpost,
+        },
+        MapPlanet {
+            id: "pirate_station".to_string(),
+            name: "Pirate Station".to_string(),
+            orbit_radius: 30,
+            orbit_period: 25,
+            position: crate::simulation::orbits::Position::new(20),
+            planet_type: PlanetType::PirateSpaceStation,
+        },
+        MapPlanet {
+            id: "frontier".to_string(),
+            name: "Frontier Colony".to_string(),
+            orbit_radius: 35,
+            orbit_period: 40,
+            position: crate::simulation::orbits::Position::new(25),
+            planet_type: PlanetType::FrontierColony,
+        },
+    ]
 }
 
 /// Helper function to get planet color as CSS string
