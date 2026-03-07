@@ -61,5 +61,5 @@ assert_fs = "1.0"
 [features]
 default = ["cli"]
 cli = ["dep:clap"]
-web = ["dep:leptos", "dep:leptos_meta", "dep:console_error_panic_hook", "dep:wasm-bindgen", "dep:web-sys", "dep:gloo", "dep:js-sys", "ui"]
+web = ["dep:leptos", "leptos/csr", "dep:leptos_meta", "dep:console_error_panic_hook", "dep:wasm-bindgen", "dep:web-sys", "dep:gloo", "dep:js-sys", "ui"]
 ui = []

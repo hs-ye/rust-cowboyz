@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>太空牛仔 - Rust Cowboyz</title>
+    <title>Space Cowboys - Rust Cowboyz</title>
     
 <script type="module">
-import init, * as bindings from '/rust-cowboyz-e133de807a7b7aef.js';
-const wasm = await init({ module_or_path: '/rust-cowboyz-e133de807a7b7aef_bg.wasm' });
+import init, * as bindings from '/rust-cowboyz-866fafb03fb5e690.js';
+const wasm = await init({ module_or_path: '/rust-cowboyz-866fafb03fb5e690_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -419,9 +419,17 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             }
         }
     </style>
-<link rel="modulepreload" href="/rust-cowboyz-e133de807a7b7aef.js" crossorigin="anonymous" integrity="sha384-2mzIw86DXY7gLhd6OEejAhaEWtDkFI7VFQwNJVMUqI5/d6vmvcrcDlrHe7q8CPfS"><link rel="preload" href="/rust-cowboyz-e133de807a7b7aef_bg.wasm" crossorigin="anonymous" integrity="sha384-bpx5qfG1RSd3cGsmjh5P+i1RfVHnoxdR19nZm/NtpNnh+AjnVi833weg7THtPlzz" as="fetch" type="application/wasm"></head>
+<link rel="modulepreload" href="/rust-cowboyz-866fafb03fb5e690.js" crossorigin="anonymous" integrity="sha384-s8dTTrQSNuRYxQ2EC82HAbhlNr+vui6CTEU5ecAk5as84z/e44+wabk0xVPhVsCb"><link rel="preload" href="/rust-cowboyz-866fafb03fb5e690_bg.wasm" crossorigin="anonymous" integrity="sha384-jLiOPqTTKsFlfTF6duPuy9kFo/jTzwMNM2sAUoOT53uGBfk+ZUR4X1W7Ttz4Ov43" as="fetch" type="application/wasm"></head>
 <body>
     <div id="app"></div>
+    <script>
+        // Call the start function after WASM is loaded
+        window.addEventListener("TrunkApplicationStarted", function() {
+            if (window.wasmBindings && window.wasmBindings.start) {
+                window.wasmBindings.start();
+            }
+        });
+    </script>
 <script>"use strict";
 
 (function () {

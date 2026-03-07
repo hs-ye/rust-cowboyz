@@ -23,3 +23,17 @@ pub use setup::World;
 pub fn create_world() -> World {
     setup::initialize_world("data/config/goods.yaml", "data/config/planets.yaml")
 }
+
+// Web entry point - mounts the Leptos app when WASM is loaded
+#[cfg(feature = "web")]
+#[wasm_bindgen::prelude::wasm_bindgen(start)]
+pub fn start() {
+    use leptos::*;
+    use wasm_bindgen::prelude::*;
+
+    // Set up panic hook for better error reporting in browser console
+    console_error_panic_hook::set_once();
+
+    // Mount the application to the body
+    leptos::mount_to_body(|| view! { <ui::web::App/> });
+}

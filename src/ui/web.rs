@@ -1,43 +1,19 @@
-//! Web entry point for Rust Cowboyz
-//!
-//! This is the entry point for the web application compiled to WASM.
+//! Web UI components for Rust Cowboyz
 
-#![cfg(feature = "web")]
-#![no_main]
-#[cfg(feature = "web")]
-use leptos::view;
-#[cfg(feature = "web")]
-use leptos::IntoView;
-#[cfg(feature = "web")]
-use leptos::component;
-#[cfg(feature = "web")]
-use leptos::create_signal;
-#[cfg(feature = "web")]
-use leptos::SignalSet;
-#[cfg(feature = "web")]
-use leptos::SignalGet;
-#[cfg(feature = "web")]
-use leptos::SignalUpdate;
-#[cfg(feature = "web")]
-use leptos::mount_to_body;
-#[cfg(feature = "web")]
-use leptos_meta::{Title, Meta};
+use leptos::*;
 
 /// Main application component with 60/40 split-screen layout
 #[component]
-fn App() -> impl IntoView {
+pub fn App() -> impl IntoView {
     // Create reactive game state
     let (money, set_money) = create_signal(1000);
-    let (location, set_location) = create_signal("Earth".to_string());
+    let (location, _set_location) = create_signal("Earth".to_string());
     let (turn, set_turn) = create_signal(1);
-    let (fuel, set_fuel) = create_signal(100);
-    let (cargo_capacity, set_cargo_capacity) = create_signal(50);
-    let (cargo_used, set_cargo_used) = create_signal(0);
+    let (fuel, _set_fuel) = create_signal(100);
+    let (cargo_capacity, _set_cargo_capacity) = create_signal(50);
+    let (cargo_used, _set_cargo_used) = create_signal(0);
 
     view! {
-        <Title text="Space Cowboys - Rust Cowboyz" />
-        <Meta name="description" content="A space-western trading game built with Rust and Leptos" />
-
         <div class="app-container">
             <header class="app-header">
                 <h1>"Space Cowboys" </h1>
@@ -189,18 +165,4 @@ fn App() -> impl IntoView {
             </div>
         </div>
     }
-}
-
-/// Main entry point for the web application
-#[cfg(feature = "web")]
-fn main() {
-    // Set up panic hook for better error reporting in browser console
-    console_error_panic_hook::set_once();
-
-    // Mount the application
-    mount_to_body(|| {
-        view! {
-            <App />
-        }
-    });
 }
