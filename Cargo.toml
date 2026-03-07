@@ -12,6 +12,11 @@ crate-type = ["cdylib", "rlib"]
 name = "rust-cowboyz"
 path = "src/main.rs"
 
+[[bin]]
+name = "cowboyz-web"
+path = "src/main_web.rs"
+required-features = ["web"]
+
 [dependencies]
 rand = "0.8"
 getrandom = { version = "0.2", default-features = false, features = ["js"] }

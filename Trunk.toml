@@ -5,6 +5,9 @@ dist = "dist"
 # Index HTML file
 index = "index.html"
 
+# Enable the web feature for WASM build
+features = ["web"]
+
 [build.public]
 # Paths to include from the public directory
 # "/" means the root of the public directory

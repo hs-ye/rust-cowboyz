@@ -102,13 +102,11 @@ pub fn load_game_from_file(path: &str) -> Result<GameState, SaveLoadError> {
 }
 
 /// Save game state to browser localStorage (for web builds)
-/// 
+///
 /// Note: This function is designed for use with wasm-bindgen in web builds.
 /// In native builds, it will return an error.
 #[cfg(target_arch = "wasm32")]
 pub fn save_game_to_browser(state: &GameState) -> Result<(), SaveLoadError> {
-    use wasm_bindgen::JsValue;
-    
     // Validate the game state before saving
     let validation = validate_game_state(state);
     if !validation.is_valid {
@@ -128,24 +126,19 @@ pub fn save_game_to_browser(state: &GameState) -> Result<(), SaveLoadError> {
         .map_err(|_| SaveLoadError::IoError("Could not get localStorage".to_string()))?
         .ok_or_else(|| SaveLoadError::IoError("localStorage not available".to_string()))?;
 
-    // Save to localStorage
-    let key = JsValue::from_str(LOCAL_STORAGE_KEY);
-    let value = JsValue::from_str(&json);
-    
-    local_storage.set(&key, &value)
+    // Save to localStorage - Storage.set() expects &str, not JsValue
+    local_storage.set(LOCAL_STORAGE_KEY, &json)
         .map_err(|_| SaveLoadError::IoError("Failed to save to localStorage".to_string()))?;
 
     Ok(())
 }
 
 /// Load game state from browser localStorage (for web builds)
-/// 
+///
 /// Note: This function is designed for use with wasm-bindgen in web builds.
 /// In native builds, it will return an error.
 #[cfg(target_arch = "wasm32")]
 pub fn load_game_from_browser() -> Result<GameState, SaveLoadError> {
-    use wasm_bindgen::JsValue;
-    
     // Get the window object and localStorage
     let window = web_sys::window().ok_or_else(|| {
         SaveLoadError::IoError("Could not get window object".to_string())
@@ -155,9 +148,8 @@ pub fn load_game_from_browser() -> Result<GameState, SaveLoadError> {
         .map_err(|_| SaveLoadError::IoError("Could not get localStorage".to_string()))?
         .ok_or_else(|| SaveLoadError::IoError("localStorage not available".to_string()))?;
 
-    // Try to get the saved game state
-    let key = JsValue::from_str(LOCAL_STORAGE_KEY);
-    let value = local_storage.get(&key)
+    // Try to get the saved game state - Storage.get() expects &str, not JsValue
+    let value = local_storage.get(LOCAL_STORAGE_KEY)
         .map_err(|_| SaveLoadError::IoError("Failed to read from localStorage".to_string()))?;
 
     match value {
@@ -181,12 +173,10 @@ pub fn load_game_from_browser() -> Result<GameState, SaveLoadError> {
 /// Check if a saved game exists in browser localStorage
 #[cfg(target_arch = "wasm32")]
 pub fn has_saved_game() -> bool {
-    use wasm_bindgen::JsValue;
-    
     if let Some(window) = web_sys::window() {
         if let Some(local_storage) = window.local_storage().ok().flatten() {
-            let key = JsValue::from_str(LOCAL_STORAGE_KEY);
-            return local_storage.get(&key).ok().flatten().is_some();
+            // Storage.get() expects &str, not JsValue
+            return local_storage.get(LOCAL_STORAGE_KEY).ok().flatten().is_some();
         }
     }
     false
@@ -195,18 +185,16 @@ pub fn has_saved_game() -> bool {
 /// Delete saved game from browser localStorage
 #[cfg(target_arch = "wasm32")]
 pub fn delete_saved_game() -> Result<(), SaveLoadError> {
-    use wasm_bindgen::JsValue;
-    
     let window = web_sys::window().ok_or_else(|| {
         SaveLoadError::IoError("Could not get window object".to_string())
     })?;
-    
+
     let local_storage = window.local_storage()
         .map_err(|_| SaveLoadError::IoError("Could not get localStorage".to_string()))?
         .ok_or_else(|| SaveLoadError::IoError("localStorage not available".to_string()))?;
 
-    let key = JsValue::from_str(LOCAL_STORAGE_KEY);
-    local_storage.delete(&key)
+    // Storage.delete() expects &str, not JsValue
+    local_storage.delete(LOCAL_STORAGE_KEY)
         .map_err(|_| SaveLoadError::IoError("Failed to delete save".to_string()))?;
 
     Ok(())

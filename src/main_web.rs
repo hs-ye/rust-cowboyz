@@ -2,19 +2,35 @@
 //!
 //! This is the entry point for the web application compiled to WASM.
 
-use leptos::prelude::*;
+#[cfg(feature = "web")]
+use leptos::view;
+#[cfg(feature = "web")]
+use leptos::IntoView;
+#[cfg(feature = "web")]
+use leptos::component;
+#[cfg(feature = "web")]
+use leptos::create_signal;
+#[cfg(feature = "web")]
+use leptos::SignalSet;
+#[cfg(feature = "web")]
+use leptos::SignalGet;
+#[cfg(feature = "web")]
+use leptos::SignalUpdate;
+#[cfg(feature = "web")]
+use leptos::mount_to_body;
+#[cfg(feature = "web")]
 use leptos_meta::{Title, Meta};
 
 /// Main application component with 60/40 split-screen layout
 #[component]
 fn App() -> impl IntoView {
     // Create reactive game state
-    let (money, set_money) = signal(1000);
-    let (location, set_location) = signal("Earth".to_string());
-    let (turn, set_turn) = signal(1);
-    let (fuel, set_fuel) = signal(100);
-    let (cargo_capacity, set_cargo_capacity) = signal(50);
-    let (cargo_used, set_cargo_used) = signal(0);
+    let (money, set_money) = create_signal(1000);
+    let (location, set_location) = create_signal("Earth".to_string());
+    let (turn, set_turn) = create_signal(1);
+    let (fuel, set_fuel) = create_signal(100);
+    let (cargo_capacity, set_cargo_capacity) = create_signal(50);
+    let (cargo_used, set_cargo_used) = create_signal(0);
 
     view! {
         <Title text="太空牛仔 - Rust Cowboyz" />
@@ -53,15 +69,15 @@ fn App() -> impl IntoView {
                         <div class="panel-content">
                             <div class="stat-row">
                                 <span class="stat-label">"资金 Credits:"</span>
-                                <span class="stat-value credits"> {move || format!("${}", money())}</span>
+                                <span class="stat-value credits"> {move || format!("${}", money.get())}</span>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">"位置 Location:"</span>
-                                <span class="stat-value location">{location}</span>
+                                <span class="stat-value location">{move || location.get()}</span>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">"回合 Turn:"</span>
-                                <span class="stat-value turn">{turn}</span>
+                                <span class="stat-value turn">{move || turn.get()}</span>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">"声望 Reputation:"</span>
@@ -79,17 +95,17 @@ fn App() -> impl IntoView {
                         <div class="panel-content">
                             <div class="stat-row">
                                 <span class="stat-label">"燃料 Fuel:"</span>
-                                <span class="stat-value fuel"> {fuel()} "/ 100"</span>
+                                <span class="stat-value fuel"> {move || fuel.get()} "/ 100"</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill fuel-fill" style={move || format!("width: {}%", fuel())}></div>
+                                <div class="progress-fill fuel-fill" style={move || format!("width: {}%", fuel.get())}></div>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">"货舱 Cargo:"</span>
-                                <span class="stat-value"> {cargo_used()} "/ " {cargo_capacity()}</span>
+                                <span class="stat-value"> {move || cargo_used.get()} "/ " {move || cargo_capacity.get()}</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill cargo-fill" style={move || format!("width: {}%", (cargo_used() as f64 / cargo_capacity() as f64) * 100.0)}></div>
+                                <div class="progress-fill cargo-fill" style={move || format!("width: {}%", (cargo_used.get() as f64 / cargo_capacity.get() as f64) * 100.0)}></div>
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">"飞船 Ship:"</span>
@@ -179,7 +195,7 @@ fn main() {
     console_error_panic_hook::set_once();
 
     // Mount the application
-    leptos::mount::mount_to_body(|| {
+    mount_to_body(|| {
         view! {
             <App />
         }
