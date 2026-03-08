@@ -5,6 +5,7 @@
 
 pub mod assets;
 pub mod game_state;
+pub mod movement;
 pub mod player;
 pub mod setup;
 pub mod simulation;
