@@ -412,7 +412,7 @@ pub fn SolarMap(
                 on:mouseleave=on_canvas_mouseleave
             />
             <div class="map-legend">
-                <span class="legend-title">"行星类型 Planets:"</span>
+                <span class="legend-title">"Planets:"</span>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #4CAF50"></span>
                     <span>"农业 Agricultural"</span>

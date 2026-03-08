@@ -117,8 +117,7 @@ pub fn GameConfigModal(
         <div class="modal-overlay" on:click={on_cancel}>
             <div class="modal-content" on:click=|e| e.stop_propagation()>
                 <div class="modal-header">
-                    <h2>"新游戏配置" </h2>
-                    <span class="modal-subtitle">"New Game Configuration"</span>
+                    <h2>"New Game Configuration"</h2>
                     <button class="modal-close" on:click={on_cancel}>"×"</button>
                 </div>
 
@@ -130,9 +129,8 @@ pub fn GameConfigModal(
                                 <div class="warning-box">
                                     <span class="warning-icon">"⚠"</span>
                                     <div class="warning-text">
-                                        <strong>"警告 Warning"</strong>
-                                        <p>"开始新游戏将覆盖当前进度。所有进度将会丢失！"</p>
-                                        <p class="hint">"Starting a new game will overwrite your current progress. All progress will be lost!"</p>
+                                        <strong>"Warning"</strong>
+                                        <p>"Starting a new game will overwrite current progress. All progress will be lost!"</p>
                                     </div>
                                 </div>
                             }
@@ -144,7 +142,7 @@ pub fn GameConfigModal(
                     // Difficulty Selection
                     <div class="form-section">
                         <label class="form-label">
-                            "难度 Difficulty"
+                            "Difficulty"
                         </label>
                         <div class="difficulty-options">
                             <button
@@ -152,7 +150,7 @@ pub fn GameConfigModal(
                                 class:selected={move || selected_difficulty.get() == GameDifficulty::Easy}
                                 on:click={move |_| on_difficulty_change(GameDifficulty::Easy)}
                             >
-                                <span class="difficulty-name">"简单 Easy"</span>
+                                <span class="difficulty-name">"Easy"</span>
                                 <span class="difficulty-bonus">"+$2000"</span>
                             </button>
                             <button
@@ -160,7 +158,7 @@ pub fn GameConfigModal(
                                 class:selected={move || selected_difficulty.get() == GameDifficulty::Normal}
                                 on:click={move |_| on_difficulty_change(GameDifficulty::Normal)}
                             >
-                                <span class="difficulty-name">"普通 Normal"</span>
+                                <span class="difficulty-name">"Normal"</span>
                                 <span class="difficulty-bonus">"$1000"</span>
                             </button>
                             <button
@@ -168,7 +166,7 @@ pub fn GameConfigModal(
                                 class:selected={move || selected_difficulty.get() == GameDifficulty::Hard}
                                 on:click={move |_| on_difficulty_change(GameDifficulty::Hard)}
                             >
-                                <span class="difficulty-name">"困难 Hard"</span>
+                                <span class="difficulty-name">"Hard"</span>
                                 <span class="difficulty-bonus">"$500"</span>
                             </button>
                         </div>
@@ -177,17 +175,17 @@ pub fn GameConfigModal(
                     // Starting Credits Display
                     <div class="form-section">
                         <label class="form-label">
-                            "起始资金 Starting Credits"
+                            "Starting Credits"
                         </label>
                         <div class="credits-display">
                             <span class="credits-value"> {move || format!("${}", starting_credits())}</span>
                             <span class="credits-label">
                                 {move || {
                                     match selected_difficulty.get() {
-                                        GameDifficulty::Easy => "简单模式加成 Easy mode bonus",
-                                        GameDifficulty::Normal => "标准资金 Standard",
-                                        GameDifficulty::Hard => "困难模式挑战 Hard mode challenge",
-                                        GameDifficulty::Custom { .. } => "自定义 Custom",
+                                        GameDifficulty::Easy => "Easy mode bonus",
+                                        GameDifficulty::Normal => "Standard",
+                                        GameDifficulty::Hard => "Hard mode challenge",
+                                        GameDifficulty::Custom { .. } => "Custom",
                                     }
                                 }}
                             </span>
@@ -197,17 +195,17 @@ pub fn GameConfigModal(
                     // Turn Limit Configuration
                     <div class="form-section">
                         <label class="form-label">
-                            "回合限制 Turn Limit"
+                            "Turn Limit"
                         </label>
                         <div class="turn-limit-display">
-                            <span class="turn-value"> {move || format!("{} 回合", turn_limit())}</span>
+                            <span class="turn-value"> {move || format!("{} turns", turn_limit())}</span>
                             <span class="turn-label">
                                 {move || {
                                     match selected_difficulty.get() {
-                                        GameDifficulty::Easy => "更多回合，更轻松 More turns, easier",
-                                        GameDifficulty::Normal => "标准回合数 Standard",
-                                        GameDifficulty::Hard => "有限回合，挑战极限 Limited turns, challenge",
-                                        GameDifficulty::Custom { .. } => "自定义 Custom",
+                                        GameDifficulty::Easy => "More turns, easier",
+                                        GameDifficulty::Normal => "Standard",
+                                        GameDifficulty::Hard => "Limited turns, challenge",
+                                        GameDifficulty::Custom { .. } => "Custom",
                                     }
                                 }}
                             </span>
@@ -243,7 +241,7 @@ pub fn GameConfigModal(
 
                 <div class="modal-footer">
                     <button class="btn btn-secondary" on:click={on_cancel}>
-                        "取消 Cancel"
+                        "Cancel"
                     </button>
                     <button
                         class="btn btn-primary"
@@ -252,9 +250,9 @@ pub fn GameConfigModal(
                     >
                         {move || {
                             if has_existing_game && !show_warning.get() {
-                                view! { <span>"确认新游戏 Confirm New Game"</span> }
+                                view! { <span>"Confirm New Game"</span> }
                             } else {
-                                view! { <span>"开始游戏 Start Game"</span> }
+                                view! { <span>"Start Game"</span> }
                             }
                         }}
                     </button>

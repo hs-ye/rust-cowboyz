@@ -48,14 +48,12 @@ fn App() -> impl IntoView {
                 // Left side (60%): Solar System Map
                 <div class="map-panel">
                     <div class="panel-header">
-                        <h2>"太阳系地图" </h2>
-                        <span class="panel-subtitle">"Solar System Map"</span>
+                        <h2>"Solar System Map"</h2>
                     </div>
                     <div class="map-viewport">
                         <div class="map-placeholder">
                             <div class="sun"></div>
-                            <p>"太阳系地图将在这里显示"</p>
-                            <p class="hint">"Solar system map will be displayed here"</p>
+                            <p>"Solar system map will be displayed here"</p>
                         </div>
                     </div>
                 </div>
@@ -65,25 +63,24 @@ fn App() -> impl IntoView {
                     // Player Status Panel
                     <div class="panel player-panel">
                         <div class="panel-header">
-                            <h3>"玩家状态" </h3>
-                            <span class="panel-subtitle">"Player Status"</span>
+                            <h3>"Player Status"</h3>
                         </div>
                         <div class="panel-content">
                             <div class="stat-row">
-                                <span class="stat-label">"资金 Credits:"</span>
+                                <span class="stat-label">"Credits:"</span>
                                 <span class="stat-value credits"> {move || format!("${}", money.get())}</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"位置 Location:"</span>
+                                <span class="stat-label">"Location:"</span>
                                 <span class="stat-value location">{move || location.get()}</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"回合 Turn:"</span>
+                                <span class="stat-label">"Turn:"</span>
                                 <span class="stat-value turn">{move || turn.get()}</span>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"声望 Reputation:"</span>
-                                <span class="stat-value">"新秀 Rookie"</span>
+                                <span class="stat-label">"Reputation:"</span>
+                                <span class="stat-value">"Rookie"</span>
                             </div>
                         </div>
                     </div>
@@ -91,27 +88,26 @@ fn App() -> impl IntoView {
                     // Ship Status Panel
                     <div class="panel ship-panel">
                         <div class="panel-header">
-                            <h3>"飞船状态" </h3>
-                            <span class="panel-subtitle">"Ship Status"</span>
+                            <h3>"Ship Status"</h3>
                         </div>
                         <div class="panel-content">
                             <div class="stat-row">
-                                <span class="stat-label">"燃料 Fuel:"</span>
+                                <span class="stat-label">"Fuel:"</span>
                                 <span class="stat-value fuel"> {move || fuel.get()} "/ 100"</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill fuel-fill" style={move || format!("width: {}%", fuel.get())}></div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"货舱 Cargo:"</span>
+                                <span class="stat-label">"Cargo:"</span>
                                 <span class="stat-value"> {move || cargo_used.get()} "/ " {move || cargo_capacity.get()}</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill cargo-fill" style={move || format!("width: {}%", (cargo_used.get() as f64 / cargo_capacity.get() as f64) * 100.0)}></div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">"飞船 Ship:"</span>
-                                <span class="stat-value">"开拓者号 Pioneer"</span>
+                                <span class="stat-label">"Ship:"</span>
+                                <span class="stat-value">"Pioneer"</span>
                             </div>
                         </div>
                     </div>
@@ -119,13 +115,11 @@ fn App() -> impl IntoView {
                     // Inventory Panel
                     <div class="panel inventory-panel">
                         <div class="panel-header">
-                            <h3>"库存" </h3>
-                            <span class="panel-subtitle">"Inventory"</span>
+                            <h3>"Inventory"</h3>
                         </div>
                         <div class="panel-content">
                             <div class="inventory-empty">
-                                <p>"货舱为空"</p>
-                                <p class="hint">"Cargo hold is empty"</p>
+                                <p>"Cargo hold is empty"</p>
                             </div>
                             <div class="inventory-list">
                                 // Placeholder inventory items
@@ -136,33 +130,33 @@ fn App() -> impl IntoView {
                     // Market Panel
                     <div class="panel market-panel">
                         <div class="panel-header">
-                            <h3>"市场" </h3>
-                            <span class="panel-subtitle">"Market - Earth"</span>
+                            <h3>"Market"</h3>
+                            <span class="panel-subtitle">"Earth"</span>
                         </div>
                         <div class="panel-content">
                             <div class="market-table">
                                 <div class="market-header">
-                                    <span>"商品 Item"</span>
-                                    <span>"买入 Buy"</span>
-                                    <span>"卖出 Sell"</span>
+                                    <span>"Item"</span>
+                                    <span>"Buy"</span>
+                                    <span>"Sell"</span>
                                 </div>
                                 <div class="market-row">
-                                    <span>"水 Water"</span>
+                                    <span>"Water"</span>
                                     <span class="buy-price">"$10"</span>
                                     <span class="sell-price">"$8"</span>
                                 </div>
                                 <div class="market-row">
-                                    <span>"食物 Food"</span>
+                                    <span>"Food"</span>
                                     <span class="buy-price">"$25"</span>
                                     <span class="sell-price">"$20"</span>
                                 </div>
                                 <div class="market-row">
-                                    <span>"矿石 Ore"</span>
+                                    <span>"Ore"</span>
                                     <span class="buy-price">"$50"</span>
                                     <span class="sell-price">"$40"</span>
                                 </div>
                                 <div class="market-row">
-                                    <span>"电子元件 Electronics"</span>
+                                    <span>"Electronics"</span>
                                     <span class="buy-price">"$100"</span>
                                     <span class="sell-price">"$80"</span>
                                 </div>
@@ -176,15 +170,15 @@ fn App() -> impl IntoView {
             <div class="actions">
                 <button class="action-btn" on:click={move |_| set_money.update(|m| *m += 100)}>
                     <span class="btn-icon">"💰"</span>
-                    <span>"测试: 增加资金"</span>
+                    <span>"Test: Add Credits"</span>
                 </button>
                 <button class="action-btn" on:click={move |_| set_turn.update(|t| *t += 1)}>
                     <span class="btn-icon">"⏱"</span>
-                    <span>"下一回合"</span>
+                    <span>"Next Turn"</span>
                 </button>
                 <button class="action-btn">
                     <span class="btn-icon">"⚙"</span>
-                    <span>"新游戏"</span>
+                    <span>"New Game"</span>
                 </button>
             </div>
         </div>

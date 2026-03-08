@@ -21,6 +21,7 @@ This is a small indie Singleplayer, space-western themed game that is primarily 
     - System itself can be randomised and doesn't need to (although it could) be realistic or based on any real solar system
 - Key strategic challenge: Players should be trying to use the (simplified) orbital mechanics model in the game to plan the best route between planets as they orbit/rotate around the star at different speeds
 - Basic ship customisation and upgrades: not aiming to build a full ship configuration system, just enough abstracted upgrades (Flight Speed, Cargo etc.)
+- Language: The game UI and all text content will be in English only. No internationalization (i18n) support in the current version.
 Project management: Build MVP first, get the minimum system working, don't over-engineer. Prefer simple, accessible features over complexity.
 
 ### Future extensions
