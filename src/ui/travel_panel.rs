@@ -154,8 +154,7 @@ pub fn TravelPanel(
     view! {
         <div class="panel travel-panel">
             <div class="panel-header">
-                <h3>"航行选择" </h3>
-                <span class="panel-subtitle">"Travel Selection"</span>
+                <h3>"Travel Selection"</h3>
             </div>
             <div class="panel-content">
                 {move || {
@@ -163,8 +162,7 @@ pub fn TravelPanel(
                         view! {
                             <div class="travel-already-there">
                                 <span class="travel-icon">"🚀"</span>
-                                <p>"您已在此行星"</p>
-                                <p class="hint">"You are already here"</p>
+                                <p>"You are already on this planet"</p>
                             </div>
                         }
                     } else {
@@ -182,17 +180,17 @@ pub fn TravelPanel(
 
                                         <div class="travel-costs">
                                             <div class="cost-row">
-                                                <span class="cost-label">"⏱ 航行时间 Travel Time:"</span>
-                                                <span class="cost-value">{cost.turns_required} 回合 turns</span>
+                                                <span class="cost-label">"⏱ Travel Time:"</span>
+                                                <span class="cost-value">{cost.turns_required} turns</span>
                                             </div>
                                             <div class="cost-row">
-                                                <span class="cost-label">"⛽ 所需燃料 Fuel Required:"</span>
+                                                <span class="cost-label">"⛽ Fuel Required:"</span>
                                                 <span class={if cost.can_afford { "cost-value fuel-ok" } else { "cost-value fuel-low" }}>
                                                     {cost.fuel_required}
                                                 </span>
                                             </div>
                                             <div class="cost-row">
-                                                <span class="cost-label">"🔋 当前燃料 Current Fuel:"</span>
+                                                <span class="cost-label">"🔋 Current Fuel:"</span>
                                                 <span class="cost-value">{player_fuel}</span>
                                             </div>
                                         </div>
@@ -209,12 +207,12 @@ pub fn TravelPanel(
                                                 ></div>
                                             </div>
                                             <div class="fuel-warning" style={if cost.can_afford { "display: none;" } else { "" }}>
-                                                <span>"⚠ 燃料不足 Insufficient fuel!"</span>
+                                                <span>"⚠ Insufficient fuel!"</span>
                                             </div>
                                         </div>
 
                                         <div class="travel-turn-info">
-                                            <span>"当前回合 Current Turn: "</span>
+                                            <span>"Current Turn: "</span>
                                             <span class="turn-value">{current_turn}</span>
                                             <span>" / "</span>
                                             <span>{total_turns}</span>
@@ -229,14 +227,14 @@ pub fn TravelPanel(
                                                 on:click={on_confirm_click}
                                             >
                                                 <span class="btn-icon">"🚀"</span>
-                                                <span>"确认航行 Confirm Travel"</span>
+                                                <span>"Confirm Travel"</span>
                                             </button>
                                             <button
                                                 class="travel-btn cancel"
                                                 on:click={on_cancel_click}
                                             >
                                                 <span class="btn-icon">"✕"</span>
-                                                <span>"取消 Cancel"</span>
+                                                <span>"Cancel"</span>
                                             </button>
                                         </div>
                                     </div>
@@ -246,8 +244,7 @@ pub fn TravelPanel(
                                 view! {
                                     <div class="travel-no-selection">
                                         <span class="travel-icon">"🛸"</span>
-                                        <p>"选择目标行星以开始航行"</p>
-                                        <p class="hint">"Select a destination planet to travel"</p>
+                                        <p>"Select a destination planet to begin travel"</p>
                                     </div>
                                 }
                             }
@@ -294,7 +291,7 @@ pub fn TravelAnimation(
                     <span class="destination">{destination_name}</span>
                 </div>
                 <div class="travel-status">
-                    <span>"正在航行... Traveling..."</span>
+                    <span>"Traveling..."</span>
                 </div>
             </div>
         </div>
