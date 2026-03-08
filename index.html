@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>太空牛仔 - Rust Cowboyz</title>
+    <title>Space Cowboys - Rust Cowboyz</title>
     <link data-trunk rel="rust" data-target-name="cowboyz" />
     <style>
         * {
@@ -411,5 +411,13 @@
 </head>
 <body>
     <div id="app"></div>
+    <script>
+        // Call the start function after WASM is loaded
+        window.addEventListener("TrunkApplicationStarted", function() {
+            if (window.wasmBindings && window.wasmBindings.start) {
+                window.wasmBindings.start();
+            }
+        });
+    </script>
 </body>
 </html>

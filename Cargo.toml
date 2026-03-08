@@ -12,6 +12,11 @@ crate-type = ["cdylib", "rlib"]
 name = "rust-cowboyz"
 path = "src/main.rs"
 
+[[bin]]
+name = "cowboyz-web"
+path = "src/main_web.rs"
+required-features = ["web"]
+
 [dependencies]
 rand = "0.8"
 getrandom = { version = "0.2", default-features = false, features = ["js"] }
@@ -56,5 +61,5 @@ assert_fs = "1.0"
 [features]
 default = ["cli"]
 cli = ["dep:clap"]
-web = ["dep:leptos", "dep:leptos_meta", "dep:console_error_panic_hook", "dep:wasm-bindgen", "dep:web-sys", "dep:gloo", "dep:js-sys", "ui"]
+web = ["dep:leptos", "leptos/csr", "dep:leptos_meta", "dep:console_error_panic_hook", "dep:wasm-bindgen", "dep:web-sys", "dep:gloo", "dep:js-sys", "ui"]
 ui = []
