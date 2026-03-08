@@ -9,6 +9,166 @@ use crate::simulation::planet_types::PlanetType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+// ============================================================================
+// Movement System Types (ADR 0002: Movement Mechanics System)
+// ============================================================================
+
+/// Represents the current travel state of a ship
+/// Ships can either be idle at a planet or in transit to a destination.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub enum TravelState {
+    /// Ship is stationary at a planet
+    Idle {
+        /// The ID of the planet where the ship is currently docked
+        at_planet: String,
+    },
+    /// Ship is currently traveling between planets
+    InTransit {
+        /// The ID of the destination planet
+        destination: String,
+        /// The turn number when the ship will arrive
+        arrival_turn: u32,
+        /// The turn when the journey started
+        departure_turn: u32,
+    },
+}
+
+#[allow(dead_code)]
+impl TravelState {
+    /// Creates a new idle state at the given planet
+    pub fn idle(at_planet: String) -> Self {
+        TravelState::Idle { at_planet }
+    }
+
+    /// Creates a new in-transit state
+    pub fn in_transit(destination: String, arrival_turn: u32, departure_turn: u32) -> Self {
+        TravelState::InTransit {
+            destination,
+            arrival_turn,
+            departure_turn,
+        }
+    }
+
+    /// Checks if the ship is currently idle
+    pub fn is_idle(&self) -> bool {
+        matches!(self, TravelState::Idle { .. })
+    }
+
+    /// Checks if the ship is currently in transit
+    pub fn is_in_transit(&self) -> bool {
+        matches!(self, TravelState::InTransit { .. })
+    }
+
+    /// Gets the current planet ID if idle, None if in transit
+    pub fn current_planet(&self) -> Option<&String> {
+        match self {
+            TravelState::Idle { at_planet } => Some(at_planet),
+            TravelState::InTransit { .. } => None,
+        }
+    }
+
+    /// Gets the destination planet ID if in transit, None if idle
+    pub fn destination(&self) -> Option<&String> {
+        match self {
+            TravelState::Idle { .. } => None,
+            TravelState::InTransit { destination, .. } => Some(destination),
+        }
+    }
+
+    /// Checks if the ship has arrived at its destination
+    /// Returns true if in transit and current_turn >= arrival_turn
+    pub fn has_arrived(&self, current_turn: u32) -> bool {
+        match self {
+            TravelState::Idle { .. } => false,
+            TravelState::InTransit { arrival_turn, .. } => current_turn >= *arrival_turn,
+        }
+    }
+
+    /// Returns the number of turns remaining until arrival
+    /// Returns 0 if idle or if already arrived
+    pub fn turns_remaining(&self, current_turn: u32) -> u32 {
+        match self {
+            TravelState::Idle { .. } => 0,
+            TravelState::InTransit { arrival_turn, .. } => {
+                arrival_turn.saturating_sub(current_turn)
+            }
+        }
+    }
+}
+
+impl Default for TravelState {
+    fn default() -> Self {
+        TravelState::Idle {
+            at_planet: "earth".to_string(),
+        }
+    }
+}
+
+/// Event emitted when a ship arrives at a destination
+/// Used for UI notifications
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct ArrivalEvent {
+    pub destination_planet_id: String,
+    pub arrival_turn: u32,
+    pub departure_turn: u32,
+    pub travel_turns: u32,
+}
+
+#[allow(dead_code)]
+impl ArrivalEvent {
+    /// Creates a new arrival event
+    pub fn new(
+        destination_planet_id: String,
+        arrival_turn: u32,
+        departure_turn: u32,
+    ) -> Self {
+        let travel_turns = arrival_turn.saturating_sub(departure_turn);
+        ArrivalEvent {
+            destination_planet_id,
+            arrival_turn,
+            departure_turn,
+            travel_turns,
+        }
+    }
+}
+
+/// Errors that can occur during travel initiation
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub enum TravelError {
+    /// Ship is already in transit
+    AlreadyInTransit,
+    /// Destination is the same as current location
+    SameDestination,
+    /// Destination planet does not exist
+    InvalidDestination,
+    /// Not enough fuel for the journey
+    InsufficientFuel,
+    /// Ship is destroyed and cannot travel
+    ShipDestroyed,
+    /// Game is over
+    GameOver,
+}
+
+impl std::fmt::Display for TravelError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TravelError::AlreadyInTransit => write!(f, "Ship is already in transit"),
+            TravelError::SameDestination => {
+                write!(f, "Destination is the same as current location")
+            }
+            TravelError::InvalidDestination => write!(f, "Destination planet does not exist"),
+            TravelError::InsufficientFuel => write!(f, "Not enough fuel for the journey"),
+            TravelError::ShipDestroyed => write!(f, "Ship is destroyed and cannot travel"),
+            TravelError::GameOver => write!(f, "Cannot travel: game is over"),
+        }
+    }
+}
+
+impl std::error::Error for TravelError {}
+
 /// Game clock that tracks turns in the game
 /// The clock advances during travel and wait actions, synchronizing all game systems
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -360,6 +520,7 @@ pub struct Player {
     pub visited_planets: Vec<String>, // Track which planets have been visited
     pub total_trades: u32,            // Total number of trades made
     pub total_earnings: u32,          // Total money earned from trades
+    pub travel_state: TravelState,    // Current travel state of the ship
 }
 
 #[allow(dead_code)]
@@ -374,19 +535,22 @@ impl Player {
             visited_planets: vec!["earth".to_string()],
             total_trades: 0,
             total_earnings: 0,
+            travel_state: TravelState::idle("earth".to_string()),
         }
     }
 
     /// Create a player with custom starting values
     pub fn with_values(money: u32, location: String, ship: Ship, cargo_capacity: u32) -> Self {
+        let location_clone = location.clone();
         Player {
             money,
-            location: location.clone(),
+            location: location_clone.clone(),
             ship,
             cargo: CargoHold::new(cargo_capacity),
             visited_planets: vec![location],
             total_trades: 0,
             total_earnings: 0,
+            travel_state: TravelState::idle(location_clone),
         }
     }
 
@@ -612,6 +776,221 @@ impl GameState {
 
         actual_advance
     }
+
+    // ============================================================================
+    // Movement System Methods (ADR 0002: Movement Mechanics System)
+    // ============================================================================
+
+    /// Advances the game by one turn, updating planet positions and checking for arrivals
+    ///
+    /// This method:
+    /// 1. Advances all planet positions by one turn
+    /// 2. Increments the current turn counter
+    /// 3. Checks if the ship has arrived at its destination
+    /// 4. Updates the travel state and player location if arrived
+    /// 5. Updates market prices
+    /// 6. Checks for game over conditions
+    ///
+    /// # Returns
+    /// * `Some(ArrivalEvent)` if the ship arrived at a destination this turn
+    /// * `None` if no arrival occurred
+    pub fn next_turn(&mut self) -> Option<ArrivalEvent> {
+        // Don't advance if game is over
+        if self.is_game_over {
+            return None;
+        }
+
+        // Advance the game clock by 1 turn
+        self.game_clock.advance(1);
+
+        // Advance all planet positions (using the same logic as advance_turns)
+        for planet in &mut self.solar_system.planets {
+            if planet.orbit_period > 0 {
+                planet.position.orbital_position =
+                    (planet.position.orbital_position + 1) % planet.orbit_period;
+            }
+        }
+
+        // Update market prices
+        for planet in &mut self.solar_system.planets {
+            planet.economy.update_market();
+        }
+
+        // Check for ship arrival
+        let arrival_event = self.check_and_process_arrival();
+
+        // Check for game over
+        if self.game_clock.is_game_over() {
+            self.end_game("Game time has run out!".to_string());
+        }
+
+        arrival_event
+    }
+
+    /// Checks if the ship has arrived and updates state accordingly
+    ///
+    /// # Returns
+    /// * `Some(ArrivalEvent)` if the ship arrived at its destination
+    /// * `None` if no arrival occurred
+    fn check_and_process_arrival(&mut self) -> Option<ArrivalEvent> {
+        let current_turn = self.game_clock.current_turn;
+
+        // Check if ship is in transit and has arrived
+        if let TravelState::InTransit {
+            destination,
+            arrival_turn,
+            departure_turn,
+        } = &self.player.travel_state
+        {
+            if current_turn >= *arrival_turn {
+                // Ship has arrived!
+                let destination_clone = destination.clone();
+                let departure = *departure_turn;
+
+                // Update player location
+                self.player.location = destination_clone.clone();
+
+                // Update travel state to idle at the destination
+                self.player.travel_state = TravelState::idle(destination_clone.clone());
+
+                // Record the visit
+                self.player.visit_planet(&destination_clone);
+
+                // Create and return the arrival event
+                return Some(ArrivalEvent::new(
+                    destination_clone,
+                    current_turn,
+                    departure,
+                ));
+            }
+        }
+
+        None
+    }
+
+    /// Initiates travel to a destination planet
+    ///
+    /// This method:
+    /// 1. Validates the destination is different from current location
+    /// 2. Validates the destination planet exists
+    /// 3. Calculates travel time using the Brachistochrone model
+    /// 4. Checks fuel availability
+    /// 5. Deducts fuel cost atomically
+    /// 6. Sets the ship to InTransit state
+    ///
+    /// # Arguments
+    /// * `destination_planet_id` - The ID of the destination planet
+    ///
+    /// # Returns
+    /// * `Ok(())` if travel was initiated successfully
+    /// * `Err(TravelError)` if travel could not be initiated
+    pub fn initiate_travel(&mut self, destination_planet_id: &str) -> Result<(), TravelError> {
+        // Check if game is over
+        if self.is_game_over {
+            return Err(TravelError::GameOver);
+        }
+
+        // Check if ship is already in transit
+        if self.player.travel_state.is_in_transit() {
+            return Err(TravelError::AlreadyInTransit);
+        }
+
+        // Get current planet ID
+        let current_planet_id = match self.player.travel_state.current_planet() {
+            Some(planet_id) => planet_id.clone(),
+            None => self.player.location.clone(),
+        };
+
+        // Validate destination is different from current location
+        if destination_planet_id == current_planet_id {
+            return Err(TravelError::SameDestination);
+        }
+
+        // Validate destination planet exists
+        let destination_planet = self
+            .solar_system
+            .get_planet(destination_planet_id)
+            .ok_or(TravelError::InvalidDestination)?;
+
+        // Get current planet for travel calculation
+        let current_planet = self
+            .solar_system
+            .get_planet(&current_planet_id)
+            .ok_or(TravelError::InvalidDestination)?;
+
+        // Check if ship is destroyed
+        if self.player.ship.is_destroyed() {
+            return Err(TravelError::ShipDestroyed);
+        }
+
+        // Calculate distance based on orbital radii
+        let distance = current_planet
+            .orbit_radius
+            .abs_diff(destination_planet.orbit_radius);
+
+        // Calculate travel turns using the Brachistochrone model
+        // Formula: travel_turns = 2 * sqrt(distance / acceleration)
+        let travel_turns = if distance == 0 {
+            1 // Minimum 1 turn for same-planet "travel"
+        } else {
+            let accel = self.player.ship.acceleration.max(1);
+            let turns = 2.0 * (distance as f64 / accel as f64).sqrt();
+            std::cmp::max(turns.ceil() as u32, 1)
+        };
+
+        // Check fuel availability (1 fuel per unit of distance, minimum 1)
+        let _fuel_cost = distance.max(1);
+        if !self.player.ship.can_travel(distance) {
+            return Err(TravelError::InsufficientFuel);
+        }
+
+        // Deduct fuel atomically
+        self.player
+            .ship
+            .travel(distance)
+            .map_err(|_| TravelError::InsufficientFuel)?;
+
+        // Calculate arrival turn
+        let current_turn = self.game_clock.current_turn;
+        let arrival_turn = current_turn + travel_turns;
+
+        // Set travel state to in-transit
+        self.player.travel_state = TravelState::in_transit(
+            destination_planet_id.to_string(),
+            arrival_turn,
+            current_turn,
+        );
+
+        Ok(())
+    }
+
+    /// Gets the current travel state of the player
+    pub fn get_travel_state(&self) -> &TravelState {
+        &self.player.travel_state
+    }
+
+    /// Checks if the ship is currently in transit
+    pub fn is_in_transit(&self) -> bool {
+        self.player.travel_state.is_in_transit()
+    }
+
+    /// Gets the number of turns remaining until arrival
+    /// Returns 0 if not in transit
+    pub fn turns_until_arrival(&self) -> u32 {
+        self.player
+            .travel_state
+            .turns_remaining(self.game_clock.current_turn)
+    }
+
+    /// Gets the current planet ID if the ship is idle, None if in transit
+    pub fn get_current_location(&self) -> Option<&String> {
+        self.player.travel_state.current_planet()
+    }
+
+    /// Gets the destination planet ID if in transit, None if idle
+    pub fn get_destination(&self) -> Option<&String> {
+        self.player.travel_state.destination()
+    }
 }
 
 impl Default for GameState {
@@ -712,6 +1091,50 @@ pub fn validate_game_state(state: &GameState) -> ValidationResult {
     let cargo_used = state.player.cargo.total_cargo_space_used();
     if cargo_used > state.player.cargo.capacity {
         result = result.with_error("Cargo hold exceeds capacity".to_string());
+    }
+
+    // Validate travel state
+    match &state.player.travel_state {
+        TravelState::Idle { at_planet } => {
+            // Validate that the idle planet exists
+            if state.solar_system.get_planet(at_planet).is_none() {
+                result = result.with_error(format!(
+                    "Travel state idle planet '{}' is not a valid planet",
+                    at_planet
+                ));
+            }
+            // Validate that idle planet matches player location
+            if at_planet != &state.player.location {
+                result = result.with_warning(
+                    "Travel state idle planet does not match player location".to_string(),
+                );
+            }
+        }
+        TravelState::InTransit {
+            destination,
+            arrival_turn,
+            departure_turn,
+        } => {
+            // Validate that the destination planet exists
+            if state.solar_system.get_planet(destination).is_none() {
+                result = result.with_error(format!(
+                    "Travel state destination '{}' is not a valid planet",
+                    destination
+                ));
+            }
+            // Validate that arrival turn is after departure turn
+            if arrival_turn <= departure_turn {
+                result = result.with_error(
+                    "Travel state arrival turn must be after departure turn".to_string(),
+                );
+            }
+            // Validate that arrival turn is not in the past
+            if *arrival_turn < state.game_clock.current_turn {
+                result = result.with_warning(
+                    "Travel state arrival turn is in the past".to_string(),
+                );
+            }
+        }
     }
 
     // Validate game clock
@@ -1186,5 +1609,460 @@ mod tests {
         assert_eq!(state.transaction_history.len(), 1);
         assert_eq!(state.transaction_history[0].turn, 1);
         assert_eq!(state.transaction_history[0].commodity, CommodityType::Water);
+    }
+
+    // =========================================================================
+    // Tests for Movement System (ADR 0002)
+    // =========================================================================
+
+    #[test]
+    fn test_travel_state_idle() {
+        let state = TravelState::idle("earth".to_string());
+        assert!(state.is_idle());
+        assert!(!state.is_in_transit());
+        assert_eq!(state.current_planet(), Some(&"earth".to_string()));
+        assert_eq!(state.destination(), None);
+        assert!(!state.has_arrived(10));
+        assert_eq!(state.turns_remaining(10), 0);
+    }
+
+    #[test]
+    fn test_travel_state_in_transit() {
+        let state = TravelState::in_transit("mars".to_string(), 10, 5);
+        assert!(!state.is_idle());
+        assert!(state.is_in_transit());
+        assert_eq!(state.current_planet(), None);
+        assert_eq!(state.destination(), Some(&"mars".to_string()));
+        assert!(!state.has_arrived(9));
+        assert!(state.has_arrived(10));
+        assert!(state.has_arrived(15));
+        assert_eq!(state.turns_remaining(7), 3);
+        assert_eq!(state.turns_remaining(10), 0);
+    }
+
+    #[test]
+    fn test_arrival_event_creation() {
+        let event = ArrivalEvent::new("mars".to_string(), 10, 5);
+        assert_eq!(event.destination_planet_id, "mars");
+        assert_eq!(event.arrival_turn, 10);
+        assert_eq!(event.departure_turn, 5);
+        assert_eq!(event.travel_turns, 5);
+    }
+
+    #[test]
+    fn test_travel_error_display() {
+        assert_eq!(
+            TravelError::AlreadyInTransit.to_string(),
+            "Ship is already in transit"
+        );
+        assert_eq!(
+            TravelError::SameDestination.to_string(),
+            "Destination is the same as current location"
+        );
+        assert_eq!(
+            TravelError::InvalidDestination.to_string(),
+            "Destination planet does not exist"
+        );
+        assert_eq!(
+            TravelError::InsufficientFuel.to_string(),
+            "Not enough fuel for the journey"
+        );
+        assert_eq!(
+            TravelError::ShipDestroyed.to_string(),
+            "Ship is destroyed and cannot travel"
+        );
+        assert_eq!(
+            TravelError::GameOver.to_string(),
+            "Cannot travel: game is over"
+        );
+    }
+
+    #[test]
+    fn test_player_has_travel_state() {
+        let player = Player::new();
+        assert!(player.travel_state.is_idle());
+        assert_eq!(player.travel_state.current_planet(), Some(&"earth".to_string()));
+    }
+
+    fn create_test_game_state_with_planets() -> GameState {
+        let mut state = GameState::new();
+
+        // Add planets to the solar system
+        let earth = Planet::new(
+            "earth".to_string(),
+            "Earth".to_string(),
+            5,  // orbit_radius
+            10, // orbit_period
+            PlanetType::Agricultural,
+        );
+        let mars = Planet::new(
+            "mars".to_string(),
+            "Mars".to_string(),
+            12, // orbit_radius
+            15, // orbit_period
+            PlanetType::Mining,
+        );
+
+        state.solar_system.planets.push(earth);
+        state.solar_system.planets.push(mars);
+
+        // Ensure player starts at earth with idle state
+        state.player.location = "earth".to_string();
+        state.player.travel_state = TravelState::idle("earth".to_string());
+
+        state
+    }
+
+    #[test]
+    fn test_initiate_travel_success() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Ensure ship has enough fuel
+        state.player.ship.fuel = 100;
+        state.player.ship.max_fuel = 100;
+
+        // Initiate travel to mars
+        let result = state.initiate_travel("mars");
+
+        assert!(result.is_ok());
+        assert!(state.is_in_transit());
+        assert_eq!(state.get_destination(), Some(&"mars".to_string()));
+        assert_eq!(state.get_current_location(), None);
+
+        // Fuel should be consumed (distance = 12 - 5 = 7)
+        assert_eq!(state.player.ship.fuel, 93); // 100 - 7 = 93
+    }
+
+    #[test]
+    fn test_initiate_travel_same_destination() {
+        let mut state = create_test_game_state_with_planets();
+
+        let result = state.initiate_travel("earth");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), TravelError::SameDestination);
+        assert!(!state.is_in_transit());
+    }
+
+    #[test]
+    fn test_initiate_travel_invalid_destination() {
+        let mut state = create_test_game_state_with_planets();
+
+        let result = state.initiate_travel("jupiter");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), TravelError::InvalidDestination);
+        assert!(!state.is_in_transit());
+    }
+
+    #[test]
+    fn test_initiate_travel_already_in_transit() {
+        let mut state = create_test_game_state_with_planets();
+
+        // First, initiate travel
+        state.player.ship.fuel = 100;
+        state.initiate_travel("mars").unwrap();
+
+        // Try to initiate travel again while in transit
+        let result = state.initiate_travel("earth");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), TravelError::AlreadyInTransit);
+    }
+
+    #[test]
+    fn test_initiate_travel_insufficient_fuel() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Set fuel to 0
+        state.player.ship.fuel = 0;
+        state.player.ship.max_fuel = 100;
+
+        let result = state.initiate_travel("mars");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), TravelError::InsufficientFuel);
+        assert!(!state.is_in_transit());
+    }
+
+    #[test]
+    fn test_initiate_travel_ship_destroyed() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Destroy the ship
+        state.player.ship.hull = 0;
+
+        let result = state.initiate_travel("mars");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), TravelError::ShipDestroyed);
+        assert!(!state.is_in_transit());
+    }
+
+    #[test]
+    fn test_initiate_travel_game_over() {
+        let mut state = create_test_game_state_with_planets();
+
+        // End the game
+        state.end_game("Test".to_string());
+
+        let result = state.initiate_travel("mars");
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), TravelError::GameOver);
+    }
+
+    #[test]
+    fn test_next_turn_advances_planets() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Get initial positions
+        let earth_initial_pos = state.solar_system.planets[0].position.orbital_position;
+
+        // Advance one turn
+        let arrival = state.next_turn();
+
+        // No arrival should occur (not in transit)
+        assert!(arrival.is_none());
+
+        // Turn should be advanced
+        assert_eq!(state.game_clock.current_turn, 2);
+
+        // Planet positions should be advanced
+        let earth_new_pos = state.solar_system.planets[0].position.orbital_position;
+        assert_eq!(earth_new_pos, (earth_initial_pos + 1) % 10);
+    }
+
+    #[test]
+    fn test_next_turn_arrival_detection() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Set up ship to be in transit with arrival at turn 3
+        state.player.travel_state = TravelState::in_transit(
+            "mars".to_string(),
+            3, // arrival_turn
+            1, // departure_turn
+        );
+        state.game_clock.current_turn = 2;
+
+        // Advance to turn 3
+        let arrival = state.next_turn();
+
+        // Should detect arrival
+        assert!(arrival.is_some());
+        let event = arrival.unwrap();
+        assert_eq!(event.destination_planet_id, "mars");
+        assert_eq!(event.arrival_turn, 3);
+
+        // Player should now be at mars
+        assert_eq!(state.player.location, "mars");
+
+        // Travel state should be idle at mars
+        assert!(state.player.travel_state.is_idle());
+        assert_eq!(state.player.travel_state.current_planet(), Some(&"mars".to_string()));
+
+        // Mars should be in visited planets
+        assert!(state.player.visited_planets.contains(&"mars".to_string()));
+    }
+
+    #[test]
+    fn test_next_turn_no_arrival_when_not_in_transit() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Not in transit
+        assert!(state.player.travel_state.is_idle());
+
+        let arrival = state.next_turn();
+
+        assert!(arrival.is_none());
+        assert!(state.player.travel_state.is_idle());
+    }
+
+    #[test]
+    fn test_next_turn_no_advance_when_game_over() {
+        let mut state = create_test_game_state_with_planets();
+
+        // End the game
+        state.end_game("Test".to_string());
+        let current_turn = state.game_clock.current_turn;
+
+        let arrival = state.next_turn();
+
+        assert!(arrival.is_none());
+        assert_eq!(state.game_clock.current_turn, current_turn); // Should not advance
+    }
+
+    #[test]
+    fn test_turns_until_arrival() {
+        let mut state = create_test_game_state_with_planets();
+
+        // Not in transit
+        assert_eq!(state.turns_until_arrival(), 0);
+
+        // Set up in transit
+        state.player.ship.fuel = 100;
+        state.initiate_travel("mars").unwrap();
+
+        // Should have some turns remaining
+        assert!(state.turns_until_arrival() > 0);
+    }
+
+    #[test]
+    fn test_travel_state_serialization() {
+        let idle = TravelState::idle("earth".to_string());
+        let in_transit = TravelState::in_transit("mars".to_string(), 10, 5);
+
+        // Test serialization roundtrip
+        let idle_json = serde_json::to_string(&idle).unwrap();
+        let in_transit_json = serde_json::to_string(&in_transit).unwrap();
+
+        let idle_loaded: TravelState = serde_json::from_str(&idle_json).unwrap();
+        let in_transit_loaded: TravelState = serde_json::from_str(&in_transit_json).unwrap();
+
+        assert_eq!(idle, idle_loaded);
+        assert_eq!(in_transit, in_transit_loaded);
+    }
+
+    #[test]
+    fn test_arrival_event_serialization() {
+        let event = ArrivalEvent::new("mars".to_string(), 10, 5);
+
+        let json = serde_json::to_string(&event).unwrap();
+        let loaded: ArrivalEvent = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(event, loaded);
+    }
+
+    #[test]
+    fn test_travel_error_serialization() {
+        let errors = vec![
+            TravelError::AlreadyInTransit,
+            TravelError::SameDestination,
+            TravelError::InvalidDestination,
+            TravelError::InsufficientFuel,
+            TravelError::ShipDestroyed,
+            TravelError::GameOver,
+        ];
+
+        for error in errors {
+            let json = serde_json::to_string(&error).unwrap();
+            let loaded: TravelError = serde_json::from_str(&json).unwrap();
+            assert_eq!(error, loaded);
+        }
+    }
+
+    #[test]
+    fn test_game_state_serialization_with_travel_state() {
+        let mut state = create_test_game_state_with_planets();
+        state.player.ship.fuel = 100;
+
+        // Initiate travel
+        state.initiate_travel("mars").unwrap();
+
+        // Serialize and deserialize
+        let json = serde_json::to_string(&state).unwrap();
+        let loaded: GameState = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(state.player.travel_state, loaded.player.travel_state);
+        assert_eq!(state.is_in_transit(), loaded.is_in_transit());
+    }
+
+    #[test]
+    fn test_validate_travel_state_idle_valid() {
+        let mut state = create_test_game_state_with_planets();
+        state.player.travel_state = TravelState::idle("earth".to_string());
+        state.player.location = "earth".to_string();
+
+        let result = validate_game_state(&state);
+        assert!(result.is_valid);
+    }
+
+    #[test]
+    fn test_validate_travel_state_idle_invalid_planet() {
+        let mut state = create_test_game_state_with_planets();
+        state.player.travel_state = TravelState::idle("jupiter".to_string());
+
+        let result = validate_game_state(&state);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.contains("jupiter")));
+    }
+
+    #[test]
+    fn test_validate_travel_state_in_transit_valid() {
+        let mut state = create_test_game_state_with_planets();
+        state.player.travel_state = TravelState::in_transit("mars".to_string(), 10, 5);
+
+        let result = validate_game_state(&state);
+        assert!(result.is_valid);
+    }
+
+    #[test]
+    fn test_validate_travel_state_in_transit_invalid_arrival() {
+        let mut state = create_test_game_state_with_planets();
+        // Arrival turn before departure turn
+        state.player.travel_state = TravelState::in_transit("mars".to_string(), 5, 10);
+
+        let result = validate_game_state(&state);
+        assert!(!result.is_valid);
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.contains("arrival turn must be after departure")));
+    }
+
+    #[test]
+    fn test_validate_travel_state_in_transit_past_arrival() {
+        let mut state = create_test_game_state_with_planets();
+        // Set current turn to be after arrival, but within total turns
+        state.game_clock.current_turn = 20;
+        state.game_clock.total_turns = 30;
+        // Arrival turn in the past
+        state.player.travel_state = TravelState::in_transit("mars".to_string(), 10, 5);
+
+        let result = validate_game_state(&state);
+        
+        // Should be a warning, not an error
+        assert!(result.is_valid, "Expected valid result but got errors: {:?}", result.errors);
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("arrival turn is in the past")));
+    }
+
+    #[test]
+    fn test_full_travel_journey() {
+        let mut state = create_test_game_state_with_planets();
+        state.player.ship.fuel = 100;
+
+        // Start at earth
+        assert_eq!(state.player.location, "earth");
+        assert!(state.player.travel_state.is_idle());
+
+        // Initiate travel to mars
+        let result = state.initiate_travel("mars");
+        assert!(result.is_ok());
+        assert!(state.is_in_transit());
+
+        // Get the arrival turn
+        let arrival_turn = match &state.player.travel_state {
+            TravelState::InTransit { arrival_turn, .. } => *arrival_turn,
+            _ => panic!("Should be in transit"),
+        };
+
+        // Advance turns until arrival
+        let mut arrival_event = None;
+        while state.game_clock.current_turn < arrival_turn {
+            arrival_event = state.next_turn();
+            if arrival_event.is_some() {
+                break;
+            }
+        }
+
+        // Should have arrived
+        assert!(arrival_event.is_some());
+        assert_eq!(arrival_event.unwrap().destination_planet_id, "mars");
+        assert_eq!(state.player.location, "mars");
+        assert!(state.player.travel_state.is_idle());
+        assert!(state.player.visited_planets.contains(&"mars".to_string()));
     }
 }
