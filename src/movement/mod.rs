@@ -357,17 +357,21 @@ impl Default for TravelState {
 /// - acceleration = ship acceleration (default 1 unit/turn²)
 ///
 /// The ship accelerates for half the journey and decelerates for the second half.
+///
+/// # Returns
+/// The number of turns required for travel, minimum of 1
 pub fn calculate_travel_turns(departure: &Planet, destination: &Planet, acceleration: u32) -> u32 {
     let distance = departure.distance_to(destination);
 
     if distance == 0 {
-        return 1; // Minimum 1 turn
+        return 1; // Minimum 1 turn for same-planet "travel"
     }
 
     let accel = acceleration.max(1);
     let travel_turns = 2.0 * (distance as f64 / accel as f64).sqrt();
 
-    travel_turns.ceil() as u32
+    // Use ceiling and ensure at least 1 turn
+    std::cmp::max(travel_turns.ceil() as u32, 1)
 }
 
 /// Calculates the fuel cost for traveling between two planets
@@ -375,6 +379,93 @@ pub fn calculate_travel_turns(departure: &Planet, destination: &Planet, accelera
 pub fn calculate_fuel_cost(departure: &Planet, destination: &Planet) -> u32 {
     let distance = departure.distance_to(destination);
     Ship::calculate_fuel_cost(distance)
+}
+
+/// Advances all planet positions by one turn
+///
+/// Each planet's position is incremented by 1 and wraps around at its orbital period.
+/// This is an O(n) operation where n is the number of planets.
+///
+/// # Arguments
+/// * `planets` - Mutable slice of planets to advance
+///
+/// # Example
+/// ```
+/// use cowboyz::movement::{Planet, advance_planet_positions};
+///
+/// let mut planets = vec![
+///     Planet::new("Earth".to_string(), 10, 20, 5),
+///     Planet::new("Mars".to_string(), 15, 30, 29),
+/// ];
+///
+/// advance_planet_positions(&mut planets);
+///
+/// assert_eq!(planets[0].position, 6);  // 5 + 1
+/// assert_eq!(planets[1].position, 0);  // 29 + 1 wraps to 0
+/// ```
+pub fn advance_planet_positions(planets: &mut [Planet]) {
+    for planet in planets.iter_mut() {
+        planet.advance_position();
+    }
+}
+
+/// Calculates fuel consumption for a journey considering ship efficiency
+///
+/// # Arguments
+/// * `travel_turns` - Number of turns the journey takes
+/// * `base_fuel_cost` - Base fuel cost for the distance
+/// * `fuel_efficiency` - Ship's fuel efficiency multiplier (higher = more efficient, less fuel used).
+///   Default is 1.0, values > 1.0 reduce fuel cost, values < 1.0 increase it
+///
+/// # Returns
+/// The calculated fuel cost, minimum of 1
+///
+/// # Example
+/// ```
+/// use cowboyz::movement::calculate_fuel_consumption;
+///
+/// // 5 turns, base cost 10, default efficiency
+/// let fuel = calculate_fuel_consumption(5, 10, 1.0);
+/// assert_eq!(fuel, 10);
+///
+/// // With 2.0 efficiency (double efficient), fuel cost is halved
+/// let fuel_efficient = calculate_fuel_consumption(5, 10, 2.0);
+/// assert_eq!(fuel_efficient, 5);
+/// ```
+pub fn calculate_fuel_consumption(travel_turns: u32, base_fuel_cost: u32, fuel_efficiency: f64) -> u32 {
+    if travel_turns == 0 {
+        return 1; // Minimum 1 fuel for any travel attempt
+    }
+
+    let efficiency = fuel_efficiency.max(0.1); // Prevent division by zero or negative efficiency
+    let adjusted_cost = (base_fuel_cost as f64 * travel_turns as f64) / efficiency;
+
+    // Ensure at least 1 fuel is consumed
+    adjusted_cost.max(1.0) as u32
+}
+
+/// Calculates the total fuel cost for a journey between planets considering ship efficiency
+///
+/// This is a convenience function that combines fuel cost calculation with efficiency
+///
+/// # Arguments
+/// * `departure` - The departure planet
+/// * `destination` - The destination planet
+/// * `ship` - The ship making the journey (uses ship's acceleration for travel time calc)
+/// * `fuel_efficiency` - Ship's fuel efficiency multiplier
+///
+/// # Returns
+/// The total fuel cost for the journey
+pub fn calculate_journey_fuel_cost(
+    departure: &Planet,
+    destination: &Planet,
+    ship: &Ship,
+    fuel_efficiency: f64,
+) -> u32 {
+    let travel_turns = calculate_travel_turns(departure, destination, ship.acceleration);
+    let base_fuel_cost = calculate_fuel_cost(departure, destination);
+
+    calculate_fuel_consumption(travel_turns, base_fuel_cost, fuel_efficiency)
 }
 
 #[cfg(test)]
@@ -676,5 +767,211 @@ mod tests {
     fn test_calculate_fuel_cost_same_planet() {
         let planet = Planet::new("Earth".to_string(), 10, 20, 0);
         assert_eq!(calculate_fuel_cost(&planet, &planet), 1); // Minimum 1
+    }
+
+    // =========================================================================
+    // Orbital Mechanics Algorithm Tests
+    // =========================================================================
+
+    #[test]
+    fn test_advance_planet_positions_basic() {
+        let mut planets = vec![
+            Planet::new("Earth".to_string(), 10, 20, 5),
+            Planet::new("Mars".to_string(), 15, 30, 10),
+        ];
+
+        advance_planet_positions(&mut planets);
+
+        assert_eq!(planets[0].position, 6); // 5 + 1
+        assert_eq!(planets[1].position, 11); // 10 + 1
+    }
+
+    #[test]
+    fn test_advance_planet_positions_wraps() {
+        let mut planets = vec![
+            Planet::new("Earth".to_string(), 10, 20, 19), // At end of period
+            Planet::new("Mars".to_string(), 15, 30, 29),  // At end of period
+        ];
+
+        advance_planet_positions(&mut planets);
+
+        assert_eq!(planets[0].position, 0); // 19 + 1 wraps to 0
+        assert_eq!(planets[1].position, 0); // 29 + 1 wraps to 0
+    }
+
+    #[test]
+    fn test_advance_planet_positions_empty() {
+        let mut planets: Vec<Planet> = vec![];
+        advance_planet_positions(&mut planets); // Should not panic
+        assert!(planets.is_empty());
+    }
+
+    #[test]
+    fn test_advance_planet_positions_single() {
+        let mut planets = vec![Planet::new("Earth".to_string(), 10, 20, 5)];
+
+        advance_planet_positions(&mut planets);
+
+        assert_eq!(planets[0].position, 6);
+    }
+
+    #[test]
+    fn test_advance_planet_positions_multiple_advances() {
+        let mut planets = vec![
+            Planet::new("Earth".to_string(), 10, 10, 0), // 10-turn period
+        ];
+
+        // Advance 10 times to complete one full orbit
+        for i in 0..10 {
+            assert_eq!(planets[0].position, i);
+            advance_planet_positions(&mut planets);
+        }
+
+        // Should be back at 0
+        assert_eq!(planets[0].position, 0);
+    }
+
+    #[test]
+    fn test_advance_planet_positions_zero_period() {
+        // Edge case: planet with zero orbital period should not change
+        let mut planets = vec![Planet {
+            name: "Station".to_string(),
+            orbital_radius: 5,
+            orbital_period: 0,
+            position: 5,
+        }];
+
+        advance_planet_positions(&mut planets);
+
+        // Position should remain unchanged due to zero period
+        assert_eq!(planets[0].position, 5);
+    }
+
+    #[test]
+    fn test_calculate_travel_turns_zero_acceleration() {
+        let planet1 = Planet::new("Inner".to_string(), 5, 10, 0);
+        let planet2 = Planet::new("Outer".to_string(), 12, 15, 0);
+
+        // Zero acceleration should be treated as 1 (minimum)
+        let turns = calculate_travel_turns(&planet1, &planet2, 0);
+        let expected = calculate_travel_turns(&planet1, &planet2, 1);
+        assert_eq!(turns, expected);
+    }
+
+    #[test]
+    fn test_calculate_travel_turns_ensures_minimum_one() {
+        // Very small distance with high acceleration could result in < 1 turn
+        let planet1 = Planet::new("A".to_string(), 10, 20, 0);
+        let planet2 = Planet::new("B".to_string(), 11, 20, 0); // Distance = 1
+
+        // With very high acceleration, travel time would be tiny
+        let turns = calculate_travel_turns(&planet1, &planet2, 100);
+        assert!(turns >= 1); // Should always be at least 1
+    }
+
+    // =========================================================================
+    // Fuel Consumption Algorithm Tests
+    // =========================================================================
+
+    #[test]
+    fn test_calculate_fuel_consumption_basic() {
+        // 5 turns, base cost 10, default efficiency (1.0)
+        // Result: 10 * 5 / 1.0 = 50
+        let fuel = calculate_fuel_consumption(5, 10, 1.0);
+        assert_eq!(fuel, 50);
+    }
+
+    #[test]
+    fn test_calculate_fuel_consumption_with_efficiency() {
+        // With 2.0 efficiency (double efficient), fuel cost is halved
+        let fuel = calculate_fuel_consumption(5, 10, 2.0);
+        assert_eq!(fuel, 25); // (10 * 5) / 2.0 = 25
+    }
+
+    #[test]
+    fn test_calculate_fuel_consumption_low_efficiency() {
+        // With 0.5 efficiency (half efficient), fuel cost is doubled
+        let fuel = calculate_fuel_consumption(5, 10, 0.5);
+        assert_eq!(fuel, 100); // (10 * 5) / 0.5 = 100
+    }
+
+    #[test]
+    fn test_calculate_fuel_consumption_minimum_one() {
+        // Even with zero travel turns, should return minimum 1
+        let fuel = calculate_fuel_consumption(0, 10, 1.0);
+        assert_eq!(fuel, 1);
+    }
+
+    #[test]
+    fn test_calculate_fuel_consumption_very_efficient() {
+        // Very high efficiency should still return at least 1
+        let fuel = calculate_fuel_consumption(1, 1, 100.0);
+        assert_eq!(fuel, 1); // (1 * 1) / 100 = 0.01 → rounded to 1
+    }
+
+    #[test]
+    fn test_calculate_fuel_consumption_zero_efficiency_protection() {
+        // Zero efficiency should be clamped to 0.1 to prevent division issues
+        let fuel = calculate_fuel_consumption(5, 10, 0.0);
+        // Treated as efficiency 0.1: (10 * 5) / 0.1 = 500
+        assert_eq!(fuel, 500);
+    }
+
+    #[test]
+    fn test_calculate_fuel_consumption_negative_efficiency_protection() {
+        // Negative efficiency should be clamped to 0.1
+        let fuel = calculate_fuel_consumption(5, 10, -1.0);
+        // Treated as efficiency 0.1: (10 * 5) / 0.1 = 500
+        assert_eq!(fuel, 500);
+    }
+
+    #[test]
+    fn test_calculate_journey_fuel_cost() {
+        let planet1 = Planet::new("Inner".to_string(), 5, 10, 0);
+        let planet2 = Planet::new("Outer".to_string(), 12, 15, 0);
+        let ship = Ship::new("earth".to_string(), 100);
+
+        // distance = 7, acceleration = 1
+        // travel_turns = 2 * sqrt(7/1) = 2 * 2.645... = 5.29... → 6
+        // base_fuel_cost = 7
+        // fuel_consumption = 7 * 6 / 1.0 = 42
+        let fuel = calculate_journey_fuel_cost(&planet1, &planet2, &ship, 1.0);
+        assert_eq!(fuel, 42);
+    }
+
+    #[test]
+    fn test_calculate_journey_fuel_cost_with_efficiency() {
+        let planet1 = Planet::new("Inner".to_string(), 5, 10, 0);
+        let planet2 = Planet::new("Outer".to_string(), 12, 15, 0);
+        let ship = Ship::new("earth".to_string(), 100);
+
+        // With 2.0 efficiency, fuel cost should be halved
+        let fuel = calculate_journey_fuel_cost(&planet1, &planet2, &ship, 2.0);
+        assert_eq!(fuel, 21); // 42 / 2 = 21
+    }
+
+    #[test]
+    fn test_calculate_journey_fuel_cost_same_planet() {
+        let planet = Planet::new("Earth".to_string(), 10, 20, 0);
+        let ship = Ship::new("earth".to_string(), 100);
+
+        // Same planet: travel_turns = 1, base_fuel_cost = 1
+        // fuel_consumption = 1 * 1 / 1.0 = 1
+        let fuel = calculate_journey_fuel_cost(&planet, &planet, &ship, 1.0);
+        assert_eq!(fuel, 1);
+    }
+
+    #[test]
+    fn test_calculate_journey_fuel_cost_with_ship_acceleration() {
+        let planet1 = Planet::new("Inner".to_string(), 5, 10, 0);
+        let planet2 = Planet::new("Outer".to_string(), 12, 15, 0);
+        let ship = Ship::with_acceleration("earth".to_string(), 100, 4);
+
+        // distance = 7, acceleration = 4
+        // travel_turns = 2 * sqrt(7/4) = 2 * 1.322... = 2.64... → 3
+        // base_fuel_cost = 7
+        // fuel_consumption = 7 * 3 / 1.0 = 21
+        let fuel = calculate_journey_fuel_cost(&planet1, &planet2, &ship, 1.0);
+        assert_eq!(fuel, 21);
     }
 }
