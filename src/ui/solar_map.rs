@@ -37,7 +37,9 @@ pub struct MapPlanet {
     pub name: String,
     pub orbit_radius: u32,
     pub orbit_period: u32,
+    #[cfg(feature = "web")]
     pub position: Position,
+    #[cfg(feature = "web")]
     pub planet_type: PlanetType,
 }
 
