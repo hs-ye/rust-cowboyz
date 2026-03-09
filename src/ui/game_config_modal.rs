@@ -42,6 +42,7 @@ impl GameConfigModalState {
 /// Game configuration data
 #[derive(Debug, Clone, PartialEq)]
 pub struct GameConfig {
+    #[cfg(feature = "web")]
     pub difficulty: GameDifficulty,
     pub turn_limit: u32,
     pub starting_credits: u32,
@@ -49,10 +50,20 @@ pub struct GameConfig {
 
 impl Default for GameConfig {
     fn default() -> Self {
-        GameConfig {
-            difficulty: GameDifficulty::Normal,
-            turn_limit: GameDifficulty::Normal.turn_limit(),
-            starting_credits: GameDifficulty::Normal.starting_money(),
+        #[cfg(feature = "web")]
+        {
+            GameConfig {
+                difficulty: GameDifficulty::Normal,
+                turn_limit: GameDifficulty::Normal.turn_limit(),
+                starting_credits: GameDifficulty::Normal.starting_money(),
+            }
+        }
+        #[cfg(not(feature = "web"))]
+        {
+            GameConfig {
+                turn_limit: 10,
+                starting_credits: 1000,
+            }
         }
     }
 }

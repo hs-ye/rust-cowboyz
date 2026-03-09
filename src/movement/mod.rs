@@ -411,6 +411,8 @@ pub fn advance_planet_positions(planets: &mut [Planet]) {
 
 /// Calculates fuel consumption for a journey considering ship efficiency
 ///
+/// Formula: fuel_cost = (base_fuel_cost * travel_turns) / fuel_efficiency
+///
 /// # Arguments
 /// * `travel_turns` - Number of turns the journey takes
 /// * `base_fuel_cost` - Base fuel cost for the distance
@@ -424,13 +426,15 @@ pub fn advance_planet_positions(planets: &mut [Planet]) {
 /// ```
 /// use cowboyz::movement::calculate_fuel_consumption;
 ///
-/// // 5 turns, base cost 10, default efficiency
+/// // 5 turns, base cost 10, default efficiency (1.0)
+/// // fuel = (10 * 5) / 1.0 = 50
 /// let fuel = calculate_fuel_consumption(5, 10, 1.0);
-/// assert_eq!(fuel, 10);
+/// assert_eq!(fuel, 50);
 ///
 /// // With 2.0 efficiency (double efficient), fuel cost is halved
+/// // fuel = (10 * 5) / 2.0 = 25
 /// let fuel_efficient = calculate_fuel_consumption(5, 10, 2.0);
-/// assert_eq!(fuel_efficient, 5);
+/// assert_eq!(fuel_efficient, 25);
 /// ```
 pub fn calculate_fuel_consumption(travel_turns: u32, base_fuel_cost: u32, fuel_efficiency: f64) -> u32 {
     if travel_turns == 0 {

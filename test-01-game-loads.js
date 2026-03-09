@@ -1,22 +1,3 @@
-# Playtest Scenario: Game Loads to Opening Screen
-
-## Objective
-Verify that the game successfully loads and displays the opening screen when navigating to the local development server.
-
-## Preconditions
-- Development server running: `trunk serve --port 8080`
-- Playwright installed: `npm install playwright`
-- Chromium browser: `npx playwright install chromium`
-
-## Automated Test Script
-```bash
-node test-01-game-loads.js
-```
-
-## Test Script
-Create `test-01-game-loads.js`:
-
-```javascript
 const { chromium } = require('playwright');
 
 (async () => {
@@ -81,28 +62,3 @@ const { chromium } = require('playwright');
     process.exit(1);
   }
 })();
-```
-
-## Manual Test Steps (for reference)
-1. Open browser to http://localhost:8080
-2. Wait for page to fully load (WASM compilation ~3 seconds)
-3. Observe the displayed content
-
-## Expected Results
-- The game UI should display the solar system map (left panel)
-- Player status panel should show credits, location, turn number
-- Ship status panel should show fuel and cargo capacity
-- Market panel should display commodities with buy/sell prices
-- Action buttons should be visible (Test: Add Credits, Next Turn, New Game)
-
-## Pass/Fail Criteria
-- [ ] Page loads without showing a blank screen
-- [ ] Exactly 1 `.app-container` element exists
-- [ ] `.app-header` element is visible
-- [ ] `.split-layout` element is visible
-- [ ] No console errors related to WASM or JavaScript
-
-## Test Execution Log
-- **Date**: 2026-03-09
-- **Result**: PASS
-- **Notes**: Initial scenario created with Playwright automation
