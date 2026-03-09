@@ -185,16 +185,5 @@ fn App() -> impl IntoView {
     }
 }
 
-/// Main entry point for the web application
-#[cfg(feature = "web")]
-fn main() {
-    // Set up panic hook for better error reporting in browser console
-    console_error_panic_hook::set_once();
-
-    // Mount the application
-    mount_to_body(|| {
-        view! {
-            <App />
-        }
-    });
-}
+// Note: The web entry point is now in src/lib.rs via the `start()` function
+// with #[wasm_bindgen(start)] attribute. This file only contains the App component.
