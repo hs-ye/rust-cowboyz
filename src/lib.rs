@@ -15,7 +15,10 @@ pub mod simulation;
 pub mod ui;
 
 // Re-export commonly used types
-pub use game_state::{GameState, ValidationResult, validate_game_state};
+pub use game_state::{
+    GameState, ValidationResult, validate_game_state,
+    TravelState, ArrivalEvent, TravelError,
+};
 pub use assets::save_game::{SaveLoadError, LOCAL_STORAGE_KEY};
 pub use player::Player;
 pub use setup::World;
