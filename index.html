@@ -411,13 +411,5 @@
 </head>
 <body>
     <div id="app"></div>
-    <script>
-        // Call the start function after WASM is loaded
-        window.addEventListener("TrunkApplicationStarted", function() {
-            if (window.wasmBindings && window.wasmBindings.start) {
-                window.wasmBindings.start();
-            }
-        });
-    </script>
 </body>
 </html>
