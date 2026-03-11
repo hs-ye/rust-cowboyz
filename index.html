@@ -257,6 +257,10 @@
             background: linear-gradient(90deg, var(--accent-purple), #a855f7);
         }
 
+        .hull-fill {
+            background: linear-gradient(90deg, var(--accent-red), #ff6b6b);
+        }
+
         /* Inventory */
         .inventory-empty {
             text-align: center;
@@ -267,6 +271,31 @@
         .inventory-empty .hint {
             font-size: 0.8rem;
             margin-top: 0.25rem;
+        }
+
+        .inventory-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .inventory-item .item-name {
+            color: var(--text-primary);
+        }
+
+        .inventory-item .item-qty {
+            color: var(--accent-cyan);
+            font-weight: 600;
         }
 
         /* Market Table */
@@ -744,6 +773,178 @@
             color: var(--accent-cyan);
             font-size: 1rem;
             animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* ============================================
+           TRAVEL STATUS PANEL (IN-TRANSIT)
+           ============================================ */
+
+        .travel-status-panel {
+            border-left: 3px solid var(--accent-orange);
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
+        }
+
+        .travel-status-panel.in-transit {
+            animation: pulse-border 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-left-color: var(--accent-orange); }
+            50% { border-left-color: #ffaa00; }
+        }
+
+        .travel-progress {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .travel-route-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .travel-route-display .origin {
+            color: var(--text-secondary);
+        }
+
+        .travel-route-display .destination {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .travel-route-display .route-arrow {
+            color: var(--accent-orange);
+        }
+
+        .turns-remaining {
+            text-align: center;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+
+        .turns-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .turns-value {
+            color: var(--accent-orange);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .travel-progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .travel-progress-bar .progress-fill {
+            background: linear-gradient(90deg, var(--accent-orange), #ffaa00);
+            transition: width 0.5s ease;
+        }
+
+        .travel-status-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--accent-orange);
+            font-size: 0.9rem;
+        }
+
+        .travel-status-message .status-icon {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ============================================
+           NOTIFICATIONS
+           ============================================ */
+
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .error-notification {
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .success-notification {
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .notification-icon {
+            font-size: 1.25rem;
+        }
+
+        .notification-message {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+
+        /* ============================================
+           ACTION BUTTON STATES
+           ============================================ */
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .action-btn:disabled:hover {
+            transform: none;
+            border-color: var(--border-color);
         }
 
         /* Actions */
