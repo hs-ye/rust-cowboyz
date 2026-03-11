@@ -1,6 +1,7 @@
 //! Travel Selection Panel Component
 //!
 //! Displays travel costs and allows player to confirm travel to selected planet.
+//! Includes destination selection panel with planet list.
 
 #[cfg(feature = "web")]
 use leptos::view;
@@ -17,7 +18,15 @@ use leptos::SignalUpdate;
 #[cfg(feature = "web")]
 use leptos::SignalGet;
 #[cfg(feature = "web")]
+use leptos::SignalSet;
+#[cfg(feature = "web")]
+use leptos::RwSignal;
+#[cfg(feature = "web")]
 use crate::game_state::Planet;
+#[cfg(feature = "web")]
+use crate::simulation::planet_types::PlanetType;
+#[cfg(feature = "web")]
+use std::rc::Rc;
 
 /// Travel cost information
 #[derive(Clone, Debug)]
@@ -274,8 +283,8 @@ pub fn TravelAnimation(
     };
 
     view! {
-        <div 
-            class="travel-animation-overlay" 
+        <div
+            class="travel-animation-overlay"
             style={if is_active { "" } else { "display: none;" }}
             on:animationend={on_animation_end}
         >
@@ -292,6 +301,162 @@ pub fn TravelAnimation(
                 </div>
                 <div class="travel-status">
                     <span>"Traveling..."</span>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+/// Get display color for planet type
+#[cfg(feature = "web")]
+fn get_planet_type_color(planet_type: &PlanetType) -> &'static str {
+    match planet_type {
+        PlanetType::Agricultural => "#4CAF50",
+        PlanetType::MegaCity => "#9C27B0",
+        PlanetType::Mining => "#FF9800",
+        PlanetType::PirateSpaceStation => "#F44336",
+        PlanetType::ResearchOutpost => "#2196F3",
+        PlanetType::Industrial => "#607D8B",
+        PlanetType::FrontierColony => "#795548",
+    }
+}
+
+/// Destination Selection Panel Component
+/// 
+/// Displays a list of all planets in the solar system for the player to select
+/// a travel destination. The current planet is shown but disabled for selection.
+/// 
+/// # Arguments
+/// * `planets` - List of all planets in the solar system
+/// * `current_planet_id` - ID of the planet where the player is currently located
+/// * `selected_planet_id` - Currently selected destination planet ID (if any)
+/// * `on_select` - Callback when a planet is selected
+/// * `on_cancel` - Callback when cancel/back button is clicked
+#[cfg(feature = "web")]
+#[component]
+pub fn DestinationSelectionPanel(
+    planets: Vec<Planet>,
+    current_planet_id: String,
+    selected_planet_id: Option<String>,
+    on_select: Option<Box<dyn Fn(String)>>,
+    on_cancel: Option<Box<dyn Fn()>>,
+) -> impl IntoView {
+    // Create signal for hover state
+    let hovered_planet = RwSignal::new(Option::<String>::None);
+
+    // Wrap callbacks in Rc to allow shared ownership
+    let on_select_rc = on_select.map(|cb| Rc::new(cb));
+    let on_cancel_rc = on_cancel.map(|cb| Rc::new(cb));
+
+    // Clone values for iteration
+    let planets_for_render = planets.clone();
+    let current_planet_for_render = current_planet_id.clone();
+    let selected_planet_for_render = selected_planet_id.clone();
+
+    view! {
+        <div class="panel destination-selection-panel">
+            <div class="panel-header">
+                <h3>"🌍 Select Destination"</h3>
+            </div>
+            <div class="panel-content">
+                <div class="planet-list">
+                    {
+                        planets_for_render.into_iter().map(move |planet| {
+                            let is_current = planet.id == current_planet_for_render;
+                            let is_selected = selected_planet_for_render.as_ref() == Some(&planet.id);
+                            let planet_id = planet.id.clone();
+                            let planet_name = planet.name.clone();
+                            let planet_type = planet.planet_type.clone();
+                            let orbit_radius = planet.orbit_radius;
+                            let orbit_period = planet.orbit_period;
+                            let type_color = get_planet_type_color(&planet_type);
+
+                            view! {
+                                <div
+                                    class={move || {
+                                        let mut classes = vec!["planet-card".to_string()];
+                                        if is_current {
+                                            classes.push("planet-card-current".to_string());
+                                        }
+                                        if is_selected {
+                                            classes.push("planet-card-selected".to_string());
+                                        }
+                                        if !is_current {
+                                            classes.push("planet-card-selectable".to_string());
+                                        }
+                                        classes.join(" ")
+                                    }}
+                                    on:click={{
+                                        let on_select_clone = on_select_rc.clone();
+                                        let current_id = current_planet_for_render.clone();
+                                        let pid = planet_id.clone();
+                                        move |_| {
+                                            if pid != current_id {
+                                                if let Some(ref callback) = on_select_clone {
+                                                    callback(pid.clone());
+                                                }
+                                            }
+                                        }
+                                    }}
+                                    on:mouseenter={move |_| {
+                                        hovered_planet.set(Some(planet_id.clone()));
+                                    }}
+                                    on:mouseleave={move |_| {
+                                        hovered_planet.set(None);
+                                    }}
+                                >
+                                    <div class="planet-card-header">
+                                        <div class="planet-type-indicator" 
+                                             style={format!("background-color: {}", type_color)}>
+                                        </div>
+                                        <div class="planet-info">
+                                            <div class="planet-name">{planet_name.clone()}</div>
+                                            <div class="planet-type">{planet_type.display_name()}</div>
+                                        </div>
+                                        {
+                                            if is_current {
+                                                view! {
+                                                    <span class="current-badge">"📍 Current"</span>
+                                                }.into_view()
+                                            } else if is_selected {
+                                                view! {
+                                                    <span class="selected-badge">"✓ Selected"</span>
+                                                }.into_view()
+                                            } else {
+                                                view! {
+                                                    <span class="select-hint">"Select"</span>
+                                                }.into_view()
+                                            }
+                                        }
+                                    </div>
+                                    <div class="planet-card-details">
+                                        <div class="detail-row">
+                                            <span class="detail-label">"🔭 Distance from Star:"</span>
+                                            <span class="detail-value">{orbit_radius} AU</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">"⏱ Orbital Period:"</span>
+                                            <span class="detail-value">{orbit_period} turns</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }).collect::<Vec<_>>()
+                    }
+                </div>
+                
+                <div class="selection-actions">
+                    <button
+                        class="btn btn-cancel"
+                        on:click={move |_| {
+                            if let Some(ref callback) = on_cancel_rc {
+                                callback();
+                            }
+                        }}
+                    >
+                        <span class="btn-icon">"✕"</span>
+                        <span>"Cancel"</span>
+                    </button>
                 </div>
             </div>
         </div>

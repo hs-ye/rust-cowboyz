@@ -306,6 +306,446 @@
             color: var(--accent-green);
         }
 
+        /* ============================================
+           DESTINATION SELECTION PANEL STYLES
+           ============================================ */
+
+        /* Destination Selection Panel */
+        .destination-selection-panel {
+            border-left: 3px solid var(--accent-cyan);
+            max-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .destination-selection-panel .panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        /* Planet List Container */
+        .planet-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        /* Planet Card */
+        .planet-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .planet-card-selectable {
+            cursor: pointer;
+        }
+
+        .planet-card-selectable:hover {
+            background: var(--bg-panel-hover);
+            border-color: var(--accent-cyan);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0, 212, 255, 0.15);
+        }
+
+        .planet-card-current {
+            background: rgba(0, 212, 255, 0.08);
+            border-color: var(--accent-cyan);
+            opacity: 0.7;
+        }
+
+        .planet-card-selected {
+            background: rgba(123, 47, 247, 0.15);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 12px rgba(123, 47, 247, 0.3);
+        }
+
+        /* Planet Card Header */
+        .planet-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .planet-type-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        .planet-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .planet-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .planet-type {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: capitalize;
+        }
+
+        /* Badges */
+        .current-badge {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-cyan);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .selected-badge {
+            background: rgba(123, 47, 247, 0.2);
+            color: var(--accent-purple);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .select-hint {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .planet-card-selectable:hover .select-hint {
+            opacity: 1;
+        }
+
+        /* Planet Card Details */
+        .planet-card-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding-left: 1.5rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Selection Actions */
+        .selection-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 71, 87, 0.2);
+        }
+
+        /* ============================================
+           TRAVEL PANEL STYLES
+           ============================================ */
+
+        .travel-panel {
+            border-left: 3px solid var(--accent-orange);
+        }
+
+        .travel-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .travel-destination {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .travel-icon {
+            font-size: 1.5rem;
+        }
+
+        .destination-details {
+            flex: 1;
+        }
+
+        .destination-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .destination-type {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .travel-costs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .cost-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cost-row:last-child {
+            border-bottom: none;
+        }
+
+        .cost-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .cost-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .fuel-ok {
+            color: var(--accent-green);
+        }
+
+        .fuel-low {
+            color: var(--accent-red);
+        }
+
+        .fuel-indicator {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .fuel-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .fuel-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .fuel-warning {
+            color: var(--accent-red);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .travel-turn-info {
+            text-align: center;
+            padding: 0.5rem;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .turn-value {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .travel-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .travel-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .travel-btn.confirm {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 255, 136, 0.1));
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .travel-btn.confirm:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 255, 136, 0.2));
+            transform: translateY(-2px);
+        }
+
+        .travel-btn.confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .travel-btn.cancel {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .travel-btn.cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--text-secondary);
+        }
+
+        .travel-no-selection,
+        .travel-already-there {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .travel-no-selection .travel-icon,
+        .travel-already-there .travel-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        /* Travel Animation Overlay */
+        .travel-animation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 23, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .travel-animation-content {
+            text-align: center;
+        }
+
+        .travel-ship {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            animation: bounce 1s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .travel-route {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .travel-route .origin,
+        .travel-route .destination {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .route-line {
+            flex: 1;
+            height: 2px;
+            background: var(--border-color);
+            position: relative;
+            min-width: 150px;
+        }
+
+        .route-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        .travel-status {
+            color: var(--accent-cyan);
+            font-size: 1rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
         /* Actions */
         .actions {
             display: flex;
