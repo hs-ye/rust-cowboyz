@@ -1,17 +1,97 @@
 //! Web UI components for Rust Cowboyz
 
 use leptos::*;
+use crate::ui::solar_map::{SolarMap, MapPlanet};
+use crate::simulation::planet_types::PlanetType;
+use crate::simulation::orbits::Position;
 
 /// Main application component with 60/40 split-screen layout
 #[component]
 pub fn App() -> impl IntoView {
     // Create reactive game state
     let (money, set_money) = create_signal(1000);
-    let (location, _set_location) = create_signal("Earth".to_string());
+    let (location, _set_location) = create_signal("earth".to_string());
     let (turn, set_turn) = create_signal(1);
     let (fuel, _set_fuel) = create_signal(100);
     let (cargo_capacity, _set_cargo_capacity) = create_signal(50);
     let (cargo_used, _set_cargo_used) = create_signal(0);
+    let (selected_planet, set_selected_planet) = create_signal(None::<String>);
+
+    // Create solar system planet data
+    let planets = vec![
+        MapPlanet {
+            id: "mercury".to_string(),
+            name: "Mercury".to_string(),
+            orbit_radius: 3,
+            orbit_period: 4,
+            position: Position::new(0),
+            planet_type: PlanetType::Mining,
+        },
+        MapPlanet {
+            id: "venus".to_string(),
+            name: "Venus".to_string(),
+            orbit_radius: 5,
+            orbit_period: 6,
+            position: Position::new(0),
+            planet_type: PlanetType::Industrial,
+        },
+        MapPlanet {
+            id: "earth".to_string(),
+            name: "Earth".to_string(),
+            orbit_radius: 7,
+            orbit_period: 8,
+            position: Position::new(0),
+            planet_type: PlanetType::Agricultural,
+        },
+        MapPlanet {
+            id: "mars".to_string(),
+            name: "Mars".to_string(),
+            orbit_radius: 10,
+            orbit_period: 12,
+            position: Position::new(0),
+            planet_type: PlanetType::Mining,
+        },
+        MapPlanet {
+            id: "jupiter".to_string(),
+            name: "Jupiter".to_string(),
+            orbit_radius: 15,
+            orbit_period: 20,
+            position: Position::new(0),
+            planet_type: PlanetType::MegaCity,
+        },
+        MapPlanet {
+            id: "saturn".to_string(),
+            name: "Saturn".to_string(),
+            orbit_radius: 20,
+            orbit_period: 28,
+            position: Position::new(0),
+            planet_type: PlanetType::Industrial,
+        },
+        MapPlanet {
+            id: "uranus".to_string(),
+            name: "Uranus".to_string(),
+            orbit_radius: 25,
+            orbit_period: 36,
+            position: Position::new(0),
+            planet_type: PlanetType::ResearchOutpost,
+        },
+        MapPlanet {
+            id: "neptune".to_string(),
+            name: "Neptune".to_string(),
+            orbit_radius: 30,
+            orbit_period: 44,
+            position: Position::new(0),
+            planet_type: PlanetType::FrontierColony,
+        },
+        MapPlanet {
+            id: "pluto".to_string(),
+            name: "Pluto".to_string(),
+            orbit_radius: 35,
+            orbit_period: 52,
+            position: Position::new(0),
+            planet_type: PlanetType::PirateSpaceStation,
+        },
+    ];
 
     view! {
         <div class="app-container">
@@ -27,10 +107,15 @@ pub fn App() -> impl IntoView {
                         <h2>"Solar System Map"</h2>
                     </div>
                     <div class="map-viewport">
-                        <div class="map-placeholder">
-                            <div class="sun"></div>
-                            <p>"Solar system map will be displayed here"</p>
-                        </div>
+                        <SolarMap
+                            planets={planets.clone()}
+                            current_turn={turn.get()}
+                            player_location={location.get()}
+                            selected_planet={selected_planet.get()}
+                            on_planet_select={Some(Box::new(move |id| {
+                                set_selected_planet.set(Some(id));
+                            }))}
+                        />
                     </div>
                 </div>
 
