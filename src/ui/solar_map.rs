@@ -374,7 +374,10 @@ pub fn SolarMap(
             }
         }
 
-        hovered_planet.set(found_planet);
+        // Only update if changed to prevent unnecessary re-renders
+        if hovered_planet.get() != found_planet {
+            hovered_planet.set(found_planet);
+        }
     };
 
     // Handle mouse leave
