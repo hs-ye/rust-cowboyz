@@ -381,14 +381,14 @@ fn calculate_initial_factors(
 }
 
 /// Simple random f64 between 0.0 and 1.0
-/// In production, this should be replaced with a proper random number generator
+/// Uses getrandom for WASM compatibility
 fn rand_f64() -> f64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .subsec_nanos();
-    (nanos as f64 % 1000_f64) / 1000_f64
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+    use rand::Rng;
+
+    let mut rng = StdRng::from_entropy(); // Uses getrandom
+    rng.gen::<f64>()
 }
 
 /// Represents the economy of a single planet/station
