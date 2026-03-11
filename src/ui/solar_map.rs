@@ -18,6 +18,8 @@ use leptos::SignalGet;
 #[cfg(feature = "web")]
 use leptos::SignalSet;
 #[cfg(feature = "web")]
+use leptos::untrack;
+#[cfg(feature = "web")]
 use leptos::NodeRef;
 #[cfg(feature = "web")]
 use leptos::view;
@@ -385,7 +387,12 @@ pub fn SolarMap(
         hovered_planet.set(None);
     };
 
-    // Set up resize observer effect
+    // Set up resize observer effect.
+    // IMPORTANT: render_canvas() reads `hovered_planet`, so we must wrap it in
+    // `untrack()` here. Without untrack, Leptos would subscribe this resize
+    // Effect to `hovered_planet`, causing every hover to trigger a canvas
+    // resize → layout reflow → vertical panel expansion and broken click coords.
+    let render_canvas_for_resize = render_canvas.clone();
     Effect::new(move |_| {
         let canvas = match canvas_ref.get() {
             Some(c) => c,
@@ -402,9 +409,21 @@ pub fn SolarMap(
             canvas.set_width(width as u32);
             canvas.set_height(height as u32);
 
-            // Initial render
-            render_canvas();
+            // Render without creating reactive subscriptions to hover state.
+            // untrack() prevents signal reads inside render_canvas() from being
+            // tracked by this resize Effect's reactive scope.
+            let render = render_canvas_for_resize.clone();
+            untrack(move || render());
         }
+    });
+
+    // Dedicated hover Effect: re-render the canvas whenever hover state
+    // changes. This is the only Effect that should subscribe to hovered_planet.
+    let render_canvas_for_hover = render_canvas.clone();
+    Effect::new(move |_| {
+        // Explicitly track hovered_planet so this Effect re-runs on hover changes.
+        let _ = hovered_planet.get();
+        render_canvas_for_hover();
     });
 
     view! {
