@@ -31,6 +31,8 @@ use leptos::component;
 use wasm_bindgen::{JsValue, JsCast};
 #[cfg(feature = "web")]
 use web_sys::CanvasRenderingContext2d;
+#[cfg(feature = "web")]
+use std::rc::Rc;
 
 /// Represents a planet with its display properties for the map
 #[derive(Clone, Debug)]
@@ -103,9 +105,9 @@ fn calculate_orbital_position(
 #[component]
 pub fn SolarMap(
     planets: Vec<MapPlanet>,
-    current_turn: u32,
-    player_location: String,
-    selected_planet: Option<String>,
+    current_turn: Box<dyn Fn() -> u32>,
+    player_location: Box<dyn Fn() -> String>,
+    selected_planet: Box<dyn Fn() -> Option<String>>,
     on_planet_select: Option<Box<dyn Fn(String)>>,
 ) -> impl IntoView {
     // Canvas element reference using Leptos html module
@@ -130,12 +132,21 @@ pub fn SolarMap(
         .max()
         .unwrap_or(0);
 
-    // Clone for use in closures
+    // Wrap closures in Rc for sharing
+    let current_turn = Rc::new(current_turn);
+    let player_location = Rc::new(player_location);
+    let selected_planet = Rc::new(selected_planet);
+    let on_planet_select = on_planet_select.map(Rc::new);
+
+    // Clone planets for use in closures
     let planets_for_render = planets.clone();
     let planets_for_click = planets.clone();
     let planets_for_hover = planets.clone();
-    let selected_planet_for_render = selected_planet.clone();
-    let player_location_for_render = player_location.clone();
+
+    // Clone Rc closures for use in render_canvas
+    let current_turn_render = current_turn.clone();
+    let player_location_render = player_location.clone();
+    let selected_planet_render = selected_planet.clone();
 
     // Render the canvas
     let render_canvas = move || {
@@ -204,7 +215,7 @@ pub fn SolarMap(
             // Calculate position at current turn
             let position = crate::simulation::orbits::calculate_orbit_position(
                 planet.orbit_period,
-                current_turn,
+                current_turn_render(),
             );
 
             let (x, y) = calculate_orbital_position(
@@ -218,9 +229,10 @@ pub fn SolarMap(
 
             let color = get_planet_color(&planet.planet_type);
             let size = get_planet_size(&planet.planet_type);
-            let is_selected = selected_planet_for_render.as_ref() == Some(&planet.id);
+            let selected_val = selected_planet_render();
+            let is_selected = selected_val.as_ref() == Some(&planet.id);
             let is_hovered = hovered_planet.get().as_ref() == Some(&planet.id);
-            let is_player_location = player_location_for_render == planet.id;
+            let is_player_location = player_location_render() == planet.id;
 
             // Draw selection ring
             if is_selected {
@@ -268,17 +280,23 @@ pub fn SolarMap(
 
     // Effect to re-render when props change
     let render_canvas_for_effect = render_canvas.clone();
+    // Clone Rc closures for effect tracking
+    let current_turn_effect = current_turn.clone();
+    let player_location_effect = player_location.clone();
+    let selected_planet_effect = selected_planet.clone();
     Effect::new(move |_| {
-        // Track dependencies to trigger re-render
-        let _ = current_turn;
-        let _ = selected_planet.clone();
-        let _ = player_location.clone();
+        // Track dependencies to trigger re-render by calling the closures
+        let _ = current_turn_effect();
+        let _ = selected_planet_effect();
+        let _ = player_location_effect();
 
         // Re-render canvas
         render_canvas_for_effect();
     });
 
     // Handle canvas click
+    // Clone Rc closures for click handler
+    let current_turn_click = current_turn.clone();
     let on_canvas_click = move |event: web_sys::MouseEvent| {
         let canvas = match canvas_ref.get() {
             Some(c) => c,
@@ -299,7 +317,7 @@ pub fn SolarMap(
         for planet in &planets_for_click {
             let position = crate::simulation::orbits::calculate_orbit_position(
                 planet.orbit_period,
-                current_turn,
+                current_turn_click(),
             );
 
             let (px, py) = calculate_orbital_position(
@@ -329,6 +347,8 @@ pub fn SolarMap(
     };
 
     // Handle mouse move for hover effects
+    // Clone Rc closures for mouse move handler
+    let current_turn_hover = current_turn.clone();
     let on_canvas_mousemove = move |event: web_sys::MouseEvent| {
         let canvas = match canvas_ref.get() {
             Some(c) => c,
@@ -351,7 +371,7 @@ pub fn SolarMap(
         for planet in &planets_for_hover {
             let position = crate::simulation::orbits::calculate_orbit_position(
                 planet.orbit_period,
-                current_turn,
+                current_turn_hover(),
             );
 
             let (px, py) = calculate_orbital_position(
