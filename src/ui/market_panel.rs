@@ -67,32 +67,32 @@ pub fn MarketPanel(
 
 /// Market Panel with Signal Support
 ///
-/// This version accepts callbacks that return planet data,
+/// This version accepts reactive signals/memos for planet data,
 /// allowing it to reactively update when the selected planet changes.
 ///
 /// # Arguments
-/// * `get_planet_name` - Callback to get the current planet name
-/// * `get_planet_type` - Callback to get the current planet type (currently unused but accepted for API consistency)
-/// * `get_economy` - Callback to get the current planet economy
+/// * `planet_name` - Callback to get the current planet name (reactive)
+/// * `planet_type` - Memo containing the current planet type (reactive)
+/// * `economy` - Memo containing the current planet economy (reactive)
 #[cfg(feature = "web")]
 #[component]
 pub fn MarketPanelReactive(
-    get_planet_name: Box<dyn Fn() -> String>,
-    get_planet_type: Box<dyn Fn() -> PlanetType>,
-    get_economy: Box<dyn Fn() -> PlanetEconomy>,
+    planet_name: impl Fn() -> String + 'static,
+    planet_type: Memo<PlanetType>,
+    economy: Memo<PlanetEconomy>,
 ) -> impl IntoView {
     // Get all commodity types
     let commodities = CommodityType::all();
 
-    // Note: get_planet_type is available but not currently used in rendering
+    // Note: planet_type is available but not currently used in rendering
     // It's kept for potential future use (e.g., planet type badges)
-    let _ = get_planet_type;
+    let _ = planet_type;
 
     view! {
         <div class="panel market-panel">
             <div class="panel-header">
                 <h3>"Market"</h3>
-                <span class="panel-subtitle">{move || get_planet_name()}</span>
+                <span class="panel-subtitle">{move || planet_name()}</span>
             </div>
             <div class="panel-content">
                 <div class="market-table">
@@ -104,9 +104,9 @@ pub fn MarketPanelReactive(
                     {
                         commodities.into_iter().map(move |commodity| {
                             let commodity_name = commodity.display_name();
-                            let economy = get_economy();
-                            let buy_price = economy.get_buy_price(&commodity).unwrap_or(0);
-                            let sell_price = economy.get_sell_price(&commodity).unwrap_or(0);
+                            let current_economy = economy.get();
+                            let buy_price = current_economy.get_buy_price(&commodity).unwrap_or(0);
+                            let sell_price = current_economy.get_sell_price(&commodity).unwrap_or(0);
 
                             view! {
                                 <div class="market-row">
