@@ -104,15 +104,21 @@ pub fn MarketPanelReactive(
                     {
                         commodities.into_iter().map(move |commodity| {
                             let commodity_name = commodity.display_name();
-                            let current_economy = economy.get();
-                            let buy_price = current_economy.get_buy_price(&commodity).unwrap_or(0);
-                            let sell_price = current_economy.get_sell_price(&commodity).unwrap_or(0);
-
+                            let commodity_for_buy = commodity.clone();
+                            let commodity_for_sell = commodity.clone();
+                            
+                            // FIX: Move economy.get() INSIDE the view! macro
+                            // This ensures Leptos tracks the reactive dependency correctly.
+                            // When economy memo changes, the view will re-render.
                             view! {
                                 <div class="market-row">
                                     <span>{commodity_name}</span>
-                                    <span class="buy-price">{format!("${}", buy_price)}</span>
-                                    <span class="sell-price">{format!("${}", sell_price)}</span>
+                                    <span class="buy-price">{
+                                        move || format!("${}", economy.get().get_buy_price(&commodity_for_buy).unwrap_or(0))
+                                    }</span>
+                                    <span class="sell-price">{
+                                        move || format!("${}", economy.get().get_sell_price(&commodity_for_sell).unwrap_or(0))
+                                    }</span>
                                 </div>
                             }
                         }).collect::<Vec<_>>()
@@ -133,10 +139,10 @@ mod tests {
     fn test_market_panel_renders_all_commodities() {
         let economy = PlanetEconomy::new(PlanetType::Agricultural);
         let commodities = CommodityType::all();
-        
+
         // Verify all 10 commodities exist
         assert_eq!(commodities.len(), 10);
-        
+
         // Verify economy has prices for all commodities
         for commodity in &commodities {
             assert!(economy.get_buy_price(commodity).is_some());
@@ -153,7 +159,7 @@ mod tests {
         // Agricultural planets should have cheaper Water (they produce it)
         let ag_water_sell = agricultural_economy.get_sell_price(&CommodityType::Water).unwrap();
         let mining_water_sell = mining_economy.get_sell_price(&CommodityType::Water).unwrap();
-        
+
         // Mining planets should have cheaper Metals
         let mining_metals_sell = mining_economy.get_sell_price(&CommodityType::Metals).unwrap();
         let ag_metals_sell = agricultural_economy.get_sell_price(&CommodityType::Metals).unwrap();
@@ -166,14 +172,14 @@ mod tests {
     #[test]
     fn test_buy_price_less_than_sell_price() {
         let economy = PlanetEconomy::new(PlanetType::Industrial);
-        
+
         for commodity in CommodityType::all() {
             let buy_price = economy.get_buy_price(&commodity).unwrap();
             let sell_price = economy.get_sell_price(&commodity).unwrap();
-            
+
             // Market buys from player at lower price than it sells to player
-            assert!(buy_price <= sell_price, 
-                "Buy price ({}) should be <= sell price ({}) for {:?}", 
+            assert!(buy_price <= sell_price,
+                "Buy price ({}) should be <= sell price ({}) for {:?}",
                 buy_price, sell_price, commodity
             );
         }
