@@ -109,9 +109,9 @@ pub fn App() -> impl IntoView {
                     <div class="map-viewport">
                         <SolarMap
                             planets={planets.clone()}
-                            current_turn={turn.get()}
-                            player_location={location.get()}
-                            selected_planet={selected_planet.get()}
+                            current_turn={Box::new(move || turn.get())}
+                            player_location={Box::new(move || location.get())}
+                            selected_planet={Box::new(move || selected_planet.get())}
                             on_planet_select={Some(Box::new(move |id| {
                                 set_selected_planet.set(Some(id));
                             }))}
