@@ -95,7 +95,7 @@ fn calculate_orbital_position(
 
     // Calculate position with offset of -π/2 to start at top
     let x = center_x + (orbit_radius as f64 * scale) * angle.cos();
-    let y = center_y + (orbit_radius as f64 * scale) * (angle + std::f64::consts::FRAC_PI_2).sin();
+    let y = center_y + (orbit_radius as f64 * scale) * angle.sin();
 
     (x, y)
 }
@@ -532,11 +532,17 @@ mod tests {
 
     #[test]
     fn test_orbital_position_calculation() {
-        // Test that position wraps correctly
+        // Test circular orbit calculation
         // At position 0 with orbit_radius=10, scale=10, center=(100,100):
-        // angle = 0, so x = 100 + 100 * cos(0) = 200, y = 100 + 100 * sin(π/2) = 200
+        // angle = 0, so x = 100 + 100 * cos(0) = 200, y = 100 + 100 * sin(0) = 100
         let (x, y) = calculate_orbital_position(10, 0, 10, 10.0, 100.0, 100.0);
         assert!((x - 200.0).abs() < 0.01);
+        assert!((y - 100.0).abs() < 0.01);
+        
+        // Test at quarter orbit (position=25, period=100 -> angle = π/2)
+        // x = 100 + 100 * cos(π/2) = 100, y = 100 + 100 * sin(π/2) = 200
+        let (x, y) = calculate_orbital_position(10, 25, 100, 10.0, 100.0, 100.0);
+        assert!((x - 100.0).abs() < 0.01);
         assert!((y - 200.0).abs() < 0.01);
     }
 }
