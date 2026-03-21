@@ -20,6 +20,12 @@ pub fn App() -> impl IntoView {
     let (cargo_used, _set_cargo_used) = create_signal(0);
     let (selected_planet, set_selected_planet) = create_signal(None::<String>);
 
+    // Create memoized values for reactive planet selection
+    // This ensures the market panel properly tracks when selected_planet changes
+    let current_planet_id = create_memo(move |_| {
+        selected_planet.get().unwrap_or(location.get())
+    });
+
     // Create solar system planet data with economy
     let planets: Vec<Planet> = vec![
         Planet {
@@ -104,6 +110,28 @@ pub fn App() -> impl IntoView {
             economy: PlanetEconomy::new(PlanetType::PirateSpaceStation),
         },
     ];
+
+    // Clone planets for use in reactive memos
+    let planets_for_economy = planets.clone();
+    let planets_for_type = planets.clone();
+
+    // Create memoized economy that reacts to planet selection changes
+    let current_economy = create_memo(move |_| {
+        let planet_id = current_planet_id.get();
+        planets_for_economy.iter()
+            .find(|p| p.id == planet_id)
+            .map(|p| p.economy.clone())
+            .unwrap_or_else(|| PlanetEconomy::new(PlanetType::Agricultural))
+    });
+
+    // Create memoized planet type for reactive updates
+    let current_planet_type = create_memo(move |_| {
+        let planet_id = current_planet_id.get();
+        planets_for_type.iter()
+            .find(|p| p.id == planet_id)
+            .map(|p| p.planet_type.clone())
+            .unwrap_or(PlanetType::Agricultural)
+    });
 
     view! {
         <div class="app-container">
@@ -209,46 +237,9 @@ pub fn App() -> impl IntoView {
 
                     // Market Panel - Reactive component that updates with planet selection
                     <MarketPanelReactive
-                        get_planet_name={Box::new({
-                            let planets_clone = planets.clone();
-                            move || {
-                                let selected_id = selected_planet.get();
-                                let location_id = location.get();
-                                // Use selected planet, or fall back to player location
-                                let planet_id = selected_id.unwrap_or(location_id);
-                                
-                                planets_clone.iter()
-                                    .find(|p| p.id == planet_id)
-                                    .map(|p| p.name.clone())
-                                    .unwrap_or_else(|| "Unknown".to_string())
-                            }
-                        })}
-                        get_planet_type={Box::new({
-                            let planets_clone = planets.clone();
-                            move || {
-                                let selected_id = selected_planet.get();
-                                let location_id = location.get();
-                                let planet_id = selected_id.unwrap_or(location_id);
-                                
-                                planets_clone.iter()
-                                    .find(|p| p.id == planet_id)
-                                    .map(|p| p.planet_type.clone())
-                                    .unwrap_or(PlanetType::Agricultural)
-                            }
-                        })}
-                        get_economy={Box::new({
-                            let planets_clone = planets.clone();
-                            move || {
-                                let selected_id = selected_planet.get();
-                                let location_id = location.get();
-                                let planet_id = selected_id.unwrap_or(location_id);
-                                
-                                planets_clone.iter()
-                                    .find(|p| p.id == planet_id)
-                                    .map(|p| p.economy.clone())
-                                    .unwrap_or_else(|| PlanetEconomy::new(PlanetType::Agricultural))
-                            }
-                        })}
+                        planet_name={move || current_planet_id.get()}
+                        planet_type={current_planet_type}
+                        economy={current_economy}
                     />
                 </div>
             </div>
