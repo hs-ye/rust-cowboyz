@@ -2,8 +2,11 @@
 
 use leptos::*;
 use crate::ui::solar_map::{SolarMap, MapPlanet};
+use crate::ui::market_panel::MarketPanelReactive;
 use crate::simulation::planet_types::PlanetType;
 use crate::simulation::orbits::Position;
+use crate::simulation::economy::PlanetEconomy;
+use crate::game_state::Planet;
 
 /// Main application component with 60/40 split-screen layout
 #[component]
@@ -17,79 +20,88 @@ pub fn App() -> impl IntoView {
     let (cargo_used, _set_cargo_used) = create_signal(0);
     let (selected_planet, set_selected_planet) = create_signal(None::<String>);
 
-    // Create solar system planet data
-    let planets = vec![
-        MapPlanet {
+    // Create solar system planet data with economy
+    let planets: Vec<Planet> = vec![
+        Planet {
             id: "mercury".to_string(),
             name: "Mercury".to_string(),
             orbit_radius: 3,
             orbit_period: 4,
             position: Position::new(0),
             planet_type: PlanetType::Mining,
+            economy: PlanetEconomy::new(PlanetType::Mining),
         },
-        MapPlanet {
+        Planet {
             id: "venus".to_string(),
             name: "Venus".to_string(),
             orbit_radius: 5,
             orbit_period: 6,
             position: Position::new(0),
             planet_type: PlanetType::Industrial,
+            economy: PlanetEconomy::new(PlanetType::Industrial),
         },
-        MapPlanet {
+        Planet {
             id: "earth".to_string(),
             name: "Earth".to_string(),
             orbit_radius: 7,
             orbit_period: 8,
             position: Position::new(0),
             planet_type: PlanetType::Agricultural,
+            economy: PlanetEconomy::new(PlanetType::Agricultural),
         },
-        MapPlanet {
+        Planet {
             id: "mars".to_string(),
             name: "Mars".to_string(),
             orbit_radius: 10,
             orbit_period: 12,
             position: Position::new(0),
             planet_type: PlanetType::Mining,
+            economy: PlanetEconomy::new(PlanetType::Mining),
         },
-        MapPlanet {
+        Planet {
             id: "jupiter".to_string(),
             name: "Jupiter".to_string(),
             orbit_radius: 15,
             orbit_period: 20,
             position: Position::new(0),
             planet_type: PlanetType::MegaCity,
+            economy: PlanetEconomy::new(PlanetType::MegaCity),
         },
-        MapPlanet {
+        Planet {
             id: "saturn".to_string(),
             name: "Saturn".to_string(),
             orbit_radius: 20,
             orbit_period: 28,
             position: Position::new(0),
             planet_type: PlanetType::Industrial,
+            economy: PlanetEconomy::new(PlanetType::Industrial),
         },
-        MapPlanet {
+        Planet {
             id: "uranus".to_string(),
             name: "Uranus".to_string(),
             orbit_radius: 25,
             orbit_period: 36,
             position: Position::new(0),
             planet_type: PlanetType::ResearchOutpost,
+            economy: PlanetEconomy::new(PlanetType::ResearchOutpost),
         },
-        MapPlanet {
+        Planet {
             id: "neptune".to_string(),
             name: "Neptune".to_string(),
             orbit_radius: 30,
             orbit_period: 44,
             position: Position::new(0),
             planet_type: PlanetType::FrontierColony,
+            economy: PlanetEconomy::new(PlanetType::FrontierColony),
         },
-        MapPlanet {
+        Planet {
             id: "pluto".to_string(),
             name: "Pluto".to_string(),
             orbit_radius: 35,
             orbit_period: 52,
             position: Position::new(0),
             planet_type: PlanetType::PirateSpaceStation,
+            economy: PlanetEconomy::new(PlanetType::PirateSpaceStation),
         },
     ];
 
@@ -108,7 +120,14 @@ pub fn App() -> impl IntoView {
                     </div>
                     <div class="map-viewport">
                         <SolarMap
-                            planets={planets.clone()}
+                            planets={planets.iter().map(|p| MapPlanet {
+                                id: p.id.clone(),
+                                name: p.name.clone(),
+                                orbit_radius: p.orbit_radius,
+                                orbit_period: p.orbit_period,
+                                position: p.position.clone(),
+                                planet_type: p.planet_type.clone(),
+                            }).collect()}
                             current_turn={Box::new(move || turn.get())}
                             player_location={Box::new(move || location.get())}
                             selected_planet={Box::new(move || selected_planet.get())}
@@ -188,42 +207,49 @@ pub fn App() -> impl IntoView {
                         </div>
                     </div>
 
-                    // Market Panel
-                    <div class="panel market-panel">
-                        <div class="panel-header">
-                            <h3>"Market"</h3>
-                            <span class="panel-subtitle">"Earth"</span>
-                        </div>
-                        <div class="panel-content">
-                            <div class="market-table">
-                                <div class="market-header">
-                                    <span>"Item"</span>
-                                    <span>"Buy"</span>
-                                    <span>"Sell"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"Water"</span>
-                                    <span class="buy-price">"$10"</span>
-                                    <span class="sell-price">"$8"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"Food"</span>
-                                    <span class="buy-price">"$25"</span>
-                                    <span class="sell-price">"$20"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"Ore"</span>
-                                    <span class="buy-price">"$50"</span>
-                                    <span class="sell-price">"$40"</span>
-                                </div>
-                                <div class="market-row">
-                                    <span>"Electronics"</span>
-                                    <span class="buy-price">"$100"</span>
-                                    <span class="sell-price">"$80"</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    // Market Panel - Reactive component that updates with planet selection
+                    <MarketPanelReactive
+                        get_planet_name={Box::new({
+                            let planets_clone = planets.clone();
+                            move || {
+                                let selected_id = selected_planet.get();
+                                let location_id = location.get();
+                                // Use selected planet, or fall back to player location
+                                let planet_id = selected_id.unwrap_or(location_id);
+                                
+                                planets_clone.iter()
+                                    .find(|p| p.id == planet_id)
+                                    .map(|p| p.name.clone())
+                                    .unwrap_or_else(|| "Unknown".to_string())
+                            }
+                        })}
+                        get_planet_type={Box::new({
+                            let planets_clone = planets.clone();
+                            move || {
+                                let selected_id = selected_planet.get();
+                                let location_id = location.get();
+                                let planet_id = selected_id.unwrap_or(location_id);
+                                
+                                planets_clone.iter()
+                                    .find(|p| p.id == planet_id)
+                                    .map(|p| p.planet_type.clone())
+                                    .unwrap_or(PlanetType::Agricultural)
+                            }
+                        })}
+                        get_economy={Box::new({
+                            let planets_clone = planets.clone();
+                            move || {
+                                let selected_id = selected_planet.get();
+                                let location_id = location.get();
+                                let planet_id = selected_id.unwrap_or(location_id);
+                                
+                                planets_clone.iter()
+                                    .find(|p| p.id == planet_id)
+                                    .map(|p| p.economy.clone())
+                                    .unwrap_or_else(|| PlanetEconomy::new(PlanetType::Agricultural))
+                            }
+                        })}
+                    />
                 </div>
             </div>
 
