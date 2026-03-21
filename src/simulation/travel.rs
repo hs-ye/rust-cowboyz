@@ -13,8 +13,18 @@ pub fn calculate_travel_turns(
     destination: &Planet,
     ship_acceleration: u32,
 ) -> u32 {
+    calculate_travel_turns_from_radii(departure.orbit_radius, destination.orbit_radius, ship_acceleration)
+}
+
+/// Calculates travel time using orbit radii directly
+/// This version is useful when you don't have full Planet structs
+pub fn calculate_travel_turns_from_radii(
+    origin_orbit_radius: u32,
+    dest_orbit_radius: u32,
+    ship_acceleration: u32,
+) -> u32 {
     // Calculate base distance based on orbital radii
-    let base_distance = departure.orbit_radius.abs_diff(destination.orbit_radius);
+    let base_distance = origin_orbit_radius.abs_diff(dest_orbit_radius);
 
     // Ensure at least 1 turn for any non-zero distance
     if base_distance == 0 {
@@ -23,7 +33,7 @@ pub fn calculate_travel_turns(
 
     // Calculate travel time using Brachistochrone model
     // travel_time = 2 * sqrt(distance / acceleration)
-    let travel_turns = 2.0 * (base_distance as f64 / ship_acceleration as f64).sqrt();
+    let travel_turns = 2.0 * (base_distance as f64 / ship_acceleration.max(1) as f64).sqrt();
 
     // Ensure at least 1 turn and return as u32
     std::cmp::max(travel_turns.ceil() as u32, 1)
