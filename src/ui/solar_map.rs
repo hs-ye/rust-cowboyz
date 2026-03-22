@@ -459,35 +459,35 @@ pub fn SolarMap(
                 <span class="legend-title">"Planets:"</span>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #4CAF50"></span>
-                    <span>"农业 Agricultural"</span>
+                    <span>"Agricultural"</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #FF9800"></span>
-                    <span>"采矿 Mining"</span>
+                    <span>"Mining"</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #607D8B"></span>
-                    <span>"工业 Industrial"</span>
+                    <span>"Industrial"</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #9C27B0"></span>
-                    <span>"都市 Mega City"</span>
+                    <span>"Mega City"</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #2196F3"></span>
-                    <span>"科研 Research"</span>
+                    <span>"Research"</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #F44336"></span>
-                    <span>"海盗 Pirate"</span>
+                    <span>"Pirate"</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color" style="background: #795548"></span>
-                    <span>"前沿 Frontier"</span>
+                    <span>"Frontier"</span>
                 </div>
                 <div class="legend-item player-indicator">
                     <span class="legend-marker">"▲"</span>
-                    <span>"玩家位置 Player Location"</span>
+                    <span>"Player Location"</span>
                 </div>
             </div>
         </div>
