@@ -275,7 +275,7 @@ Cargo capacity creates strategic decisions:
 - Large player sales increase local supply
 - Price slippage for very large trades (future)
 
-#### Ship System (ADR #0006, #0007, #0008)
+#### Ship System (ADR #0006, #0012, #0013)
 - Base cargo capacity from ship type
 - Upgrade slots can increase capacity
 - Different ships have different base capacities
@@ -310,7 +310,7 @@ Cargo capacity creates strategic decisions:
 ## References
 - [Market/Economy System ADR #0005](./0005-market-economy-system.md)
 - [Data Models/Schema ADR #0006](./0006-data-models-schema.md)
-- [Ship Types System ADR #0007](./0007-ship-types-system.md)
-- [Ship Types Technical Implementation ADR #0008](./0008-ship-types-technical-implementation.md)
+- [Ship Types System ADR #0012](./0012-ship-types-system.md)
+- [Ship Types Technical Implementation ADR #0013](./0013-ship-types-technical-implementation.md)
 - [Web UI View ADR #0003](./0003-web-ui-view.md)
 - [Project Principles ADR #0000](./0000-project-principles.md)

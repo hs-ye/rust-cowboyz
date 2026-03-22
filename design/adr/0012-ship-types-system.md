@@ -1,10 +1,10 @@
-# 0007: Ship Types System
+# 0012: Ship Types System
 
 ## Status
-Accepted
+Proposed
 
 ## Date
-2026-03-13
+2026-03-21
 
 ## Deciders
 - User
@@ -108,3 +108,5 @@ For MVP, ships are permanent. A future enhancement could allow ship trading at s
 - [Movement Mechanics System ADR #0002](./0002-movement-mechanics-system.md)
 - [Market/Economy System ADR #0005](./0005-market-economy-system.md)
 - [Data Models/Schema ADR #0006](./0006-data-models-schema.md)
+- [Cargo Hold Management ADR #0010](./0010-cargo-hold-management.md)
+- [Travel/Preview Feature ADR #0011](./0011-travel-preview-feature.md)

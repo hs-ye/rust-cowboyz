@@ -1,17 +1,17 @@
-# 0008: Ship Types System - Technical Implementation
+# 0013: Ship Types System - Technical Implementation
 
 ## Status
-Accepted
+Proposed
 
 ## Date
-2026-03-13
+2026-03-21
 
 ## Deciders
 - User
 - software-architect
 
 ## Context
-Game Design ADR #0007 defines three ship archetypes (Rustbucket Sloop, Prairie Brigantine, Iron Galleon) each with distinct `acceleration`, `cargo_capacity`, and `purchase_cost`. This ADR details the technical implementation.
+Game Design ADR #0012 defines three ship archetypes (Rustbucket Sloop, Prairie Brigantine, Iron Galleon) each with distinct `acceleration`, `cargo_capacity`, and `purchase_cost`. This ADR details the technical implementation.
 
 ### Current State
 - `src/player/ship.rs` defines a `Ship` struct with `speed: f64`, `acceleration: u32`, `cargo_capacity: u32`. The struct is hardcoded via `Ship::new(10.0, 10)` in `Player::new()`.
@@ -35,7 +35,7 @@ Add a new config file defining all available ship types. This follows the existi
 
 ```yaml
 # data/config/ships.yaml
-# Ship type definitions - Based on ADR 0007: Ship Types System
+# Ship type definitions - Based on ADR 0012: Ship Types System
 # All ships share the same commodity cargo model (1 unit of cargo = 1 commodity slot)
 
 - id: sloop
@@ -268,8 +268,10 @@ ships.yaml
 - The `serde_yaml` crate dependency must be added to `Cargo.toml` if not already present (check if `serde_yaml` or equivalent is already in the dependency tree)
 
 ## References
-- [Ship Types Game Design ADR #0007](./0007-ship-types-system.md)
+- [Ship Types Game Design ADR #0012](./0012-ship-types-system.md)
 - [Movement Mechanics System ADR #0002](./0002-movement-mechanics-system.md)
 - [Data Models/Schema ADR #0006](./0006-data-models-schema.md)
 - [Tech Stack Selection ADR #0004](./0004-tech-stack-selection.md)
 - [Market/Economy System ADR #0005](./0005-market-economy-system.md)
+- [Cargo Hold Management ADR #0010](./0010-cargo-hold-management.md)
+- [Travel/Preview Feature ADR #0011](./0011-travel-preview-feature.md)
