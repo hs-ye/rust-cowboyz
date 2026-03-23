@@ -175,10 +175,6 @@ pub fn App() -> impl IntoView {
                         </div>
                         <div class="panel-content">
                             <div class="stat-row">
-                                <span class="stat-label">"Credits:"</span>
-                                <span class="stat-value credits"> {move || format!("${}", money.get())}</span>
-                            </div>
-                            <div class="stat-row">
                                 <span class="stat-label">"Location:"</span>
                                 <span class="stat-value location">{move || location.get()}</span>
                             </div>
@@ -220,17 +216,15 @@ pub fn App() -> impl IntoView {
                         </div>
                     </div>
 
-                    // Inventory Panel
-                    <div class="panel inventory-panel">
+                    // Credits Panel - Prominent display of player credits
+                    <div class="panel credits-panel">
                         <div class="panel-header">
-                            <h3>"Inventory"</h3>
+                            <h3>"Credits"</h3>
                         </div>
-                        <div class="panel-content">
-                            <div class="inventory-empty">
-                                <p>"Cargo hold is empty"</p>
-                            </div>
-                            <div class="inventory-list">
-                                // Placeholder inventory items
+                        <div class="panel-content credits-content">
+                            <div class="credits-display">
+                                <span class="credits-symbol">"💰 $"</span>
+                                <span class="credits-amount">{move || format!("{}", money.get())}</span>
                             </div>
                         </div>
                     </div>
