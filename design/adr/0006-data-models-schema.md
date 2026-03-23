@@ -17,7 +17,7 @@ Key requirements for the data models:
 - Support browser-based state persistence using localStorage
 - Enable efficient serialization/deserialization with serde
 - Represent all core game entities (planets, resources, markets, ships, player state)
-- Support the dynamic market economy system defined in ADR #0001
+- Support the dynamic market economy system defined in ADR #0005
 - Integrate with the orbital mechanics system defined in ADR #0002
 - Facilitate the turn-based gameplay mechanics
 - Allow for future extensibility while maintaining simplicity for MVP
@@ -103,7 +103,7 @@ The data models will be persisted using the following approach:
 - **Market System**: Integrates with ADR #0005 for dynamic pricing
 - **Orbital Mechanics**: Integrates with ADR #0002 for movement calculations
 - **UI System**: Provides data structures for Leptos components (ADR #0004)
-- **Trading Mechanics**: Supports core gameplay loop from project principles
+- **Trading Mechanics**: Support trading defined by ADR #0007 and #0008
 
 ## Consequences
 
