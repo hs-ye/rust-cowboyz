@@ -293,6 +293,114 @@
             background: linear-gradient(90deg, var(--accent-purple), #a855f7);
         }
 
+        /* ============================================
+           CARGO PANEL STYLES
+           ============================================ */
+
+        .cargo-status-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .cargo-progress-bar {
+            position: relative;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .cargo-progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            min-width: 40px;
+        }
+
+        /* Color zones for cargo fill */
+        .cargo-progress-fill.zone-green {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+
+        .cargo-progress-fill.zone-yellow {
+            background: linear-gradient(90deg, #eab308, #ca8a04);
+        }
+
+        .cargo-progress-fill.zone-red {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        /* Empty state - grey bar */
+        .cargo-progress-fill.is-empty {
+            background: linear-gradient(90deg, #4a5568, #2d3748);
+        }
+
+        /* Full state - bright red with pulse effect */
+        .cargo-progress-fill.is-full {
+            background: linear-gradient(90deg, #dc2626, #b91c1c);
+            animation: cargo-full-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes cargo-full-pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+        }
+
+        .cargo-numeric-overlay {
+            position: relative;
+            z-index: 10;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
+
+        .cargo-state-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 20px;
+        }
+
+        .cargo-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .cargo-label.hidden {
+            display: none;
+        }
+
+        .cargo-label-empty {
+            color: var(--text-muted);
+            background: rgba(74, 85, 104, 0.2);
+        }
+
+        .cargo-label-full {
+            color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.15);
+            font-weight: 700;
+            animation: label-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes label-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
         /* Inventory */
         .inventory-empty {
             text-align: center;
