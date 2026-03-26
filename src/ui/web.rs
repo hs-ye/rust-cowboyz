@@ -7,6 +7,7 @@ use crate::ui::market_panel::MarketPanelReactive;
 use crate::simulation::planet_types::PlanetType;
 use crate::simulation::orbits::Position;
 use crate::simulation::economy::PlanetEconomy;
+use crate::simulation::commodity::CommodityType;
 use crate::game_state::Planet;
 
 /// Main application component with 60/40 split-screen layout
@@ -236,6 +237,17 @@ pub fn App() -> impl IntoView {
                         planet_name={move || current_planet_id.get()}
                         planet_type={current_planet_type}
                         economy={current_economy}
+                        cargo_capacity={move || cargo_capacity.get()}
+                        current_cargo={move || cargo_used.get()}
+                        player_credits={move || money.get()}
+                        cargo_inventory={move || {
+                            // Create a mock cargo inventory for demonstration
+                            // In real implementation, this would come from player state
+                            vec![
+                                (CommodityType::Water, 5),
+                                (CommodityType::Foodstuffs, 3),
+                            ]
+                        }}
                     />
                 </div>
             </div>
