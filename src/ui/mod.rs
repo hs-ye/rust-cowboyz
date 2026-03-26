@@ -1,3 +1,4 @@
+pub mod cargo_panel;
 pub mod cli;
 pub mod game_config_modal;
 pub mod market_panel;

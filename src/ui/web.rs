@@ -1,6 +1,7 @@
 //! Web UI components for Rust Cowboyz
 
 use leptos::*;
+use crate::ui::cargo_panel::CargoPanel;
 use crate::ui::solar_map::{SolarMap, MapPlanet};
 use crate::ui::market_panel::MarketPanelReactive;
 use crate::simulation::planet_types::PlanetType;
@@ -204,11 +205,12 @@ pub fn App() -> impl IntoView {
                             </div>
                             <div class="stat-row">
                                 <span class="stat-label">"Cargo:"</span>
-                                <span class="stat-value"> {move || cargo_used.get()} "/ " {move || cargo_capacity.get()}</span>
+                                <span class="stat-value">{move || format!("{}/{}", cargo_used.get(), cargo_capacity.get())}</span>
                             </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill cargo-fill" style={move || format!("width: {}%", (cargo_used.get() as f64 / cargo_capacity.get() as f64) * 100.0)}></div>
-                            </div>
+                            <CargoPanel
+                                current_used={cargo_used.get()}
+                                capacity={cargo_capacity.get()}
+                            />
                             <div class="stat-row">
                                 <span class="stat-label">"Ship:"</span>
                                 <span class="stat-value">"Pioneer"</span>
