@@ -1,4 +1,5 @@
 pub mod actions;
+pub mod cargo_validation;
 pub mod inventory;
 pub mod ship;
 
