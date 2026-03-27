@@ -553,6 +553,8 @@ pub fn MarketPanel(
 /// allowing it to reactively update when the selected planet changes.
 ///
 /// # Arguments
+/// * `slider_values` - RwSignal containing slider values for each commodity
+/// * `set_slider_values` - WriteSignal to update slider values
 /// * `planet_name` - Callback to get the current planet name (reactive)
 /// * `planet_type` - Memo containing the current planet type (reactive)
 /// * `economy` - Memo containing the current planet economy (reactive)
@@ -563,6 +565,8 @@ pub fn MarketPanel(
 #[cfg(feature = "web")]
 #[component]
 pub fn MarketPanelReactive(
+    slider_values: ReadSignal<std::collections::HashMap<CommodityType, u32>>,
+    set_slider_values: WriteSignal<std::collections::HashMap<CommodityType, u32>>,
     planet_name: impl Fn() -> String + Clone + 'static,
     planet_type: Memo<PlanetType>,
     economy: Memo<PlanetEconomy>,
@@ -584,7 +588,7 @@ pub fn MarketPanelReactive(
     let commodities_for_cargo = commodities.clone();
     let commodities_for_reset = commodities.clone();
     let commodities_for_render = commodities.clone();
-    
+
     // Clone callbacks for use in multiple closures
     let cargo_capacity_clone1 = cargo_capacity.clone();
     let cargo_capacity_clone2 = cargo_capacity.clone();
@@ -599,20 +603,9 @@ pub fn MarketPanelReactive(
     let cargo_inventory_clone3 = cargo_inventory.clone();
     let cargo_inventory_reset = cargo_inventory.clone();
 
-    // Create signal to track slider values for each commodity
-    let (slider_values, set_slider_values) = create_signal(
-        commodities_for_sliders.iter()
-            .map(|c| {
-                let inv = cargo_inventory();
-                let qty = inv.iter()
-                    .find(|(commodity, _)| commodity == c)
-                    .map(|(_, q)| *q)
-                    .unwrap_or(0);
-                (c.clone(), qty)
-            })
-            .collect::<std::collections::HashMap<_, _>>()
-    );
-    
+    // slider_values and set_slider_values are now passed as props
+    // No need to create internal signals
+
     // Calculate total credit change and cargo change
     let total_credit_change = create_memo(move |_| {
         let values = slider_values.get();
@@ -817,14 +810,6 @@ pub fn MarketPanelReactive(
                         }).collect::<Vec<_>>()
                     }
                 </div>
-
-                // Trade Preview Panel
-                <TradePreview
-                    credit_change={total_credit_change}
-                    cargo_change={total_cargo_change}
-                    current_cargo={current_cargo_clone3()}
-                    cargo_capacity={cargo_capacity_clone3()}
-                />
 
                 // Trade Controls
                 <TradeControls

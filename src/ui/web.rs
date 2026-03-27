@@ -2,8 +2,10 @@
 
 use leptos::*;
 use crate::ui::cargo_panel::CargoPanel;
+use crate::ui::credits_panel::CreditsPanel;
 use crate::ui::solar_map::{SolarMap, MapPlanet};
 use crate::ui::market_panel::MarketPanelReactive;
+use crate::ui::trading_state::{create_trading_state, TradingState};
 use crate::simulation::planet_types::PlanetType;
 use crate::simulation::orbits::Position;
 use crate::simulation::economy::PlanetEconomy;
@@ -135,6 +137,23 @@ pub fn App() -> impl IntoView {
             .unwrap_or(PlanetType::Agricultural)
     });
 
+    // Create mock cargo inventory for demonstration
+    let cargo_inventory = move || {
+        vec![
+            (CommodityType::Water, 5),
+            (CommodityType::Foodstuffs, 3),
+        ]
+    };
+
+    // Create shared trading state for reactive previews
+    let trading_state = create_trading_state(
+        cargo_inventory.clone(),
+        current_economy,
+        move || money.get(),
+        move || cargo_capacity.get(),
+        move || cargo_used.get(),
+    );
+
     view! {
         <div class="app-container">
             <header class="app-header">
@@ -209,8 +228,10 @@ pub fn App() -> impl IntoView {
                                 <span class="stat-value">{move || format!("{}/{}", cargo_used.get(), cargo_capacity.get())}</span>
                             </div>
                             <CargoPanel
-                                current_used={cargo_used.get()}
-                                capacity={cargo_capacity.get()}
+                                current_used={move || cargo_used.get()}
+                                capacity={move || cargo_capacity.get()}
+                                cargo_change={trading_state.cargo_change}
+                                projected_cargo={trading_state.projected_cargo}
                             />
                             <div class="stat-row">
                                 <span class="stat-label">"Ship:"</span>
@@ -220,34 +241,23 @@ pub fn App() -> impl IntoView {
                     </div>
 
                     // Credits Panel - Prominent display of player credits
-                    <div class="panel credits-panel">
-                        <div class="panel-header">
-                            <h3>"Credits"</h3>
-                        </div>
-                        <div class="panel-content credits-content">
-                            <div class="credits-display">
-                                <span class="credits-symbol">"💰 $"</span>
-                                <span class="credits-amount">{move || format!("{}", money.get())}</span>
-                            </div>
-                        </div>
-                    </div>
+                    <CreditsPanel
+                        current_credits={move || money.get()}
+                        credit_change={trading_state.credit_change}
+                        projected_credits={trading_state.projected_credits}
+                    />
 
                     // Market Panel - Reactive component that updates with planet selection
                     <MarketPanelReactive
+                        slider_values={trading_state.slider_values}
+                        set_slider_values={trading_state.set_slider_values}
                         planet_name={move || current_planet_id.get()}
                         planet_type={current_planet_type}
                         economy={current_economy}
                         cargo_capacity={move || cargo_capacity.get()}
                         current_cargo={move || cargo_used.get()}
                         player_credits={move || money.get()}
-                        cargo_inventory={move || {
-                            // Create a mock cargo inventory for demonstration
-                            // In real implementation, this would come from player state
-                            vec![
-                                (CommodityType::Water, 5),
-                                (CommodityType::Foodstuffs, 3),
-                            ]
-                        }}
+                        cargo_inventory={cargo_inventory.clone()}
                     />
                 </div>
             </div>

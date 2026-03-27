@@ -4,6 +4,7 @@
 //! - Current used capacity vs total capacity
 //! - Color-coded zones (green 0-50%, yellow 51-80%, red 81-100%)
 //! - State labels ("Cargo Empty" at 0%, "CARGO FULL" at 100%)
+//! - Dynamic preview of projected cargo from pending trades
 
 #[cfg(feature = "web")]
 use leptos::*;
@@ -14,43 +15,97 @@ use leptos::*;
 /// - Color zones: Green (0-50%), Yellow (51-80%), Red (81-100%)
 /// - Numeric overlay: "used/total units" format
 /// - State labels: "Cargo Empty" (grey) at 0%, "CARGO FULL" (red, bold) at 100%
+/// - Dynamic preview: Shows projected cargo level from pending trades
 ///
 /// # Arguments
-/// * `current_used` - Current cargo units used (can be a signal for reactivity)
-/// * `capacity` - Total cargo capacity (can be a signal for reactivity)
+/// * `current_used` - Callback returning current cargo units used
+/// * `capacity` - Callback returning total cargo capacity
+/// * `cargo_change` - Memo containing cargo change from pending trades
+///                    (positive = buying, negative = selling)
+/// * `projected_cargo` - Memo containing projected cargo after trade
 #[cfg(feature = "web")]
 #[component]
 pub fn CargoPanel(
-    current_used: u32,
-    capacity: u32,
+    current_used: impl Fn() -> u32 + Clone + 'static,
+    capacity: impl Fn() -> u32 + Clone + 'static,
+    cargo_change: Memo<i32>,
+    projected_cargo: Memo<u32>,
 ) -> impl IntoView {
-    // Calculate fill percentage
-    let fill_percentage = if capacity > 0 {
-        (current_used as f64 / capacity as f64) * 100.0
-    } else {
-        0.0
-    };
+    // Clone capacity for use in multiple memos
+    let capacity_clone1 = capacity.clone();
+    let capacity_clone2 = capacity.clone();
+    let capacity_clone3 = capacity.clone();
+    let capacity_clone4 = capacity.clone();
 
-    // Determine color zone class based on fill percentage
-    let color_zone_class = create_memo(move |_| {
-        if fill_percentage <= 50.0 {
-            "bg-green-500"
-        } else if fill_percentage <= 80.0 {
-            "bg-yellow-500"
+    // Calculate fill percentage for projected cargo
+    let fill_percentage = create_memo(move |_| {
+        let projected = projected_cargo.get();
+        let cap = capacity_clone1();
+        if cap > 0 {
+            (projected as f64 / cap as f64) * 100.0
         } else {
-            "bg-red-500"
+            0.0
         }
     });
 
-    // Determine if cargo is empty (0%)
-    let is_empty = create_memo(move |_| current_used == 0);
+    // Determine color zone class based on projected fill percentage
+    let color_zone_class = create_memo(move |_| {
+        let pct = fill_percentage.get();
+        if pct <= 50.0 {
+            "zone-green"
+        } else if pct <= 80.0 {
+            "zone-yellow"
+        } else {
+            "zone-red"
+        }
+    });
 
-    // Determine if cargo is full (100%)
-    let is_full = create_memo(move |_| current_used >= capacity && capacity > 0);
+    // Determine if projected cargo is empty (0%)
+    let is_empty = create_memo(move |_| projected_cargo.get() == 0);
 
-    // Get inline style for the fill width
+    // Determine if projected cargo is full (100%)
+    let is_full = create_memo(move |_| {
+        let projected = projected_cargo.get();
+        let cap = capacity_clone2();
+        projected >= cap && cap > 0
+    });
+
+    // Get inline style for the fill width (animated)
     let fill_style = create_memo(move |_| {
-        format!("width: {}%", fill_percentage)
+        format!("width: {}%", fill_percentage.get())
+    });
+
+    // Format the cargo display with projection
+    let cargo_display = create_memo(move |_| {
+        let current = current_used();
+        let projected = projected_cargo.get();
+        let cap = capacity_clone3();
+        let change = cargo_change.get();
+        
+        if change == 0 {
+            // No change - just show current cargo
+            format!("{}/{} units", current, cap)
+        } else {
+            // Show change with arrow notation
+            format!("{}/{} → {}/{} units", current, cap, projected, cap)
+        }
+    });
+
+    // Determine if there's a cargo warning
+    let cargo_warning = create_memo(move |_| {
+        let projected = projected_cargo.get();
+        let cap = capacity_clone4();
+        let change = cargo_change.get();
+        
+        if change == 0 {
+            None
+        } else if projected < 0 {
+            Some("Cannot sell more than you have!")
+        } else if projected > cap {
+            Some("Exceeds cargo capacity!")
+        } else {
+            None
+        }
     });
 
     view! {
@@ -60,13 +115,13 @@ pub fn CargoPanel(
                     class="cargo-progress-fill"
                     class:is-empty=move || is_empty.get()
                     class:is-full=move || is_full.get()
-                    class:zone-green=move || color_zone_class.get() == "bg-green-500"
-                    class:zone-yellow=move || color_zone_class.get() == "bg-yellow-500"
-                    class:zone-red=move || color_zone_class.get() == "bg-red-500"
+                    class:zone-green=move || color_zone_class.get() == "zone-green"
+                    class:zone-yellow=move || color_zone_class.get() == "zone-yellow"
+                    class:zone-red=move || color_zone_class.get() == "zone-red"
                     style=fill_style
                 >
                     <span class="cargo-numeric-overlay">
-                        {move || format!("{}/{} units", current_used, capacity)}
+                        {move || cargo_display.get()}
                     </span>
                 </div>
             </div>
@@ -83,6 +138,16 @@ pub fn CargoPanel(
                 >
                     "CARGO FULL"
                 </span>
+                // Show warning if applicable
+                {move || {
+                    cargo_warning.get().map(|warning| {
+                        view! {
+                            <span class="cargo-label cargo-label-warning">
+                                {warning}
+                            </span>
+                        }
+                    })
+                }}
             </div>
         </div>
     }

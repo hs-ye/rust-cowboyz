@@ -223,6 +223,34 @@
             color: var(--accent-green);
             text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
             letter-spacing: 2px;
+            transition: color 0.3s ease-in-out;
+        }
+
+        /* Credit change color coding */
+        .credits-amount.credit-gain {
+            color: var(--accent-green);
+        }
+
+        .credits-amount.credit-loss {
+            color: var(--accent-red);
+        }
+
+        .credits-amount.credit-neutral {
+            color: var(--accent-green);
+        }
+
+        /* Credit trade hint */
+        .credit-trade-hint {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            text-align: center;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .credit-trade-hint.hidden {
+            display: none;
         }
 
         /* Market Panel */
@@ -394,6 +422,12 @@
             background: rgba(239, 68, 68, 0.15);
             font-weight: 700;
             animation: label-pulse 1.5s ease-in-out infinite;
+        }
+
+        .cargo-label-warning {
+            color: var(--accent-orange);
+            background: rgba(255, 107, 53, 0.15);
+            font-weight: 600;
         }
 
         @keyframes label-pulse {
