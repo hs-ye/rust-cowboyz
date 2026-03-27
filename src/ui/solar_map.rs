@@ -47,6 +47,20 @@ pub struct MapPlanet {
     pub planet_type: PlanetType,
 }
 
+/// Planet type display names for UI
+#[cfg(feature = "web")]
+pub fn get_planet_display_name(planet_type: &PlanetType) -> &'static str {
+    match planet_type {
+        PlanetType::Agricultural => "Agricultural",
+        PlanetType::MegaCity => "Mega City",
+        PlanetType::Mining => "Mining",
+        PlanetType::PirateSpaceStation => "Pirate Station",
+        PlanetType::ResearchOutpost => "Research Outpost",
+        PlanetType::Industrial => "Industrial",
+        PlanetType::FrontierColony => "Frontier Colony",
+    }
+}
+
 /// Color mapping for planet types
 #[cfg(feature = "web")]
 pub fn get_planet_color(planet_type: &PlanetType) -> &'static str {
@@ -59,6 +73,22 @@ pub fn get_planet_color(planet_type: &PlanetType) -> &'static str {
         PlanetType::Industrial => "#607D8B",      // Grey
         PlanetType::FrontierColony => "#795548",  // Brown
     }
+}
+
+/// Returns all planet types with their colors and display names for legend
+#[cfg(feature = "web")]
+pub fn get_planet_legend_data() -> Vec<(&'static str, &'static str, &'static str)> {
+    use crate::simulation::planet_types::PlanetType;
+    
+    vec![
+        ("agricultural", get_planet_color(&PlanetType::Agricultural), get_planet_display_name(&PlanetType::Agricultural)),
+        ("mining", get_planet_color(&PlanetType::Mining), get_planet_display_name(&PlanetType::Mining)),
+        ("industrial", get_planet_color(&PlanetType::Industrial), get_planet_display_name(&PlanetType::Industrial)),
+        ("mega-city", get_planet_color(&PlanetType::MegaCity), get_planet_display_name(&PlanetType::MegaCity)),
+        ("research", get_planet_color(&PlanetType::ResearchOutpost), get_planet_display_name(&PlanetType::ResearchOutpost)),
+        ("pirate", get_planet_color(&PlanetType::PirateSpaceStation), get_planet_display_name(&PlanetType::PirateSpaceStation)),
+        ("frontier", get_planet_color(&PlanetType::FrontierColony), get_planet_display_name(&PlanetType::FrontierColony)),
+    ]
 }
 
 /// Size mapping for planet types (radius in pixels)
@@ -456,38 +486,44 @@ pub fn SolarMap(
                 on:mouseleave=on_canvas_mouseleave
             />
             <div class="map-legend">
-                <span class="legend-title">"Planets:"</span>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #4CAF50"></span>
-                    <span>"Agricultural"</span>
+                <div class="legend-header">
+                    <span class="legend-icon">"🪐"</span>
+                    <span class="legend-title-collapsed">"Legend"</span>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #FF9800"></span>
-                    <span>"Mining"</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #607D8B"></span>
-                    <span>"Industrial"</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #9C27B0"></span>
-                    <span>"Mega City"</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #2196F3"></span>
-                    <span>"Research"</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #F44336"></span>
-                    <span>"Pirate"</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: #795548"></span>
-                    <span>"Frontier"</span>
-                </div>
-                <div class="legend-item player-indicator">
-                    <span class="legend-marker">"▲"</span>
-                    <span>"Player Location"</span>
+                <div class="legend-content">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #4CAF50"></span>
+                        <span>"Agricultural"</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #FF9800"></span>
+                        <span>"Mining"</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #607D8B"></span>
+                        <span>"Industrial"</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #9C27B0"></span>
+                        <span>"Mega City"</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #2196F3"></span>
+                        <span>"Research"</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #F44336"></span>
+                        <span>"Pirate Station"</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #795548"></span>
+                        <span>"Frontier"</span>
+                    </div>
+                    <div class="legend-divider"></div>
+                    <div class="legend-item player-indicator">
+                        <span class="legend-marker">"▲"</span>
+                        <span>"Player Location"</span>
+                    </div>
                 </div>
             </div>
         </div>
