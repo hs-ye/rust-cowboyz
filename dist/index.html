@@ -39,20 +39,29 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             --text-muted: #4a5568;
         }
 
+        /* Height-constrain HTML/Body - Issue #146 */
+        html, body {
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--bg-dark);
-            min-height: 100vh;
             color: var(--text-primary);
             line-height: 1.5;
         }
 
-        /* Main App Container */
+        /* Main App Container - Issue #146: Constrain to viewport */
         .app-container {
             max-width: 1600px;
             margin: 0 auto;
             padding: 1rem;
-            min-height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
@@ -82,16 +91,17 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             font-size: 0.9rem;
         }
 
-        /* Split Layout - 60/40 */
+        /* Split Layout - 60/40 - Issue #146: Fix height */
         .split-layout {
             display: grid;
             grid-template-columns: 60% 40%;
             gap: 1rem;
             flex: 1;
             min-height: 0;
+            height: 100%;
         }
 
-        /* Map Panel (Left - 60%) */
+        /* Map Panel (Left - 60%) - Issue #146: Fix height chain */
         .map-panel {
             background: var(--bg-panel);
             border: 1px solid var(--border-color);
@@ -99,6 +109,8 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            height: 100%;
+            min-height: 0;
         }
 
         .panel-header {
@@ -127,9 +139,10 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             align-items: center;
             justify-content: center;
             padding: 1rem;
-            background: 
+            background:
                 radial-gradient(ellipse at center, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
                 linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
+            min-height: 0;
         }
 
         .map-placeholder {
@@ -157,11 +170,12 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             margin-top: 0.5rem;
         }
 
-        /* Info Panels Container (Right - 40%) */
+        /* Info Panels Container (Right - 40%) - Issue #146: Fix scrolling */
         .info-panels {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            max-height: 100%;
             overflow-y: auto;
         }
 
@@ -220,12 +234,23 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             border-radius: 12px;
             padding: 1.5rem 2rem;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .credits-display:hover {
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.25);
+            border-color: rgba(0, 255, 136, 0.5);
         }
 
         .credits-symbol {
             font-size: 2.5rem;
             color: var(--accent-green);
             text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .credits-display:hover .credits-symbol {
+            transform: scale(1.1);
         }
 
         .credits-amount {
@@ -234,40 +259,56 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             color: var(--accent-green);
             text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
             letter-spacing: 2px;
-            transition: color 0.3s ease-in-out;
+            transition: color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
         }
 
-        /* Credit change color coding */
+        /* Credit change color coding with smooth transitions */
         .credits-amount.credit-gain {
             color: var(--accent-green);
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
         }
 
         .credits-amount.credit-loss {
             color: var(--accent-red);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
         }
 
         .credits-amount.credit-neutral {
             color: var(--accent-green);
         }
 
-        /* Credit trade hint */
+        /* Credit trade hint with fade animation */
         .credit-trade-hint {
             font-size: 0.9rem;
             color: var(--text-secondary);
             margin-top: 0.5rem;
             text-align: center;
             opacity: 0.8;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            animation: hint-fade-in 0.5s ease-out;
+        }
+
+        @keyframes hint-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 0.8;
+                transform: translateY(0);
+            }
         }
 
         .credit-trade-hint.hidden {
             display: none;
         }
 
-        /* Market Panel */
+        /* Market Panel - Issue #146: Constrain height with internal scrolling */
         .market-panel {
             border-left: 3px solid var(--accent-green);
             flex: 1;
+            max-height: 45vh;
+            overflow-y: auto;
         }
 
         /* Stats */
@@ -360,26 +401,31 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: width 0.3s ease, background-color 0.3s ease;
+            transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out, box-shadow 0.3s ease;
             min-width: 40px;
+            will-change: width;
         }
 
-        /* Color zones for cargo fill */
+        /* Color zones for cargo fill with smooth transitions */
         .cargo-progress-fill.zone-green {
             background: linear-gradient(90deg, #22c55e, #16a34a);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
         }
 
         .cargo-progress-fill.zone-yellow {
             background: linear-gradient(90deg, #eab308, #ca8a04);
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
         }
 
         .cargo-progress-fill.zone-red {
             background: linear-gradient(90deg, #ef4444, #dc2626);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
         }
 
         /* Empty state - grey bar */
         .cargo-progress-fill.is-empty {
             background: linear-gradient(90deg, #4a5568, #2d3748);
+            box-shadow: none;
         }
 
         /* Full state - bright red with pulse effect */
@@ -389,8 +435,14 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
         }
 
         @keyframes cargo-full-pulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+            0%, 100% { 
+                box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+                opacity: 1;
+            }
+            50% { 
+                box-shadow: 0 0 25px rgba(239, 68, 68, 0.9);
+                opacity: 0.9;
+            }
         }
 
         .cargo-numeric-overlay {
@@ -417,6 +469,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             letter-spacing: 0.5px;
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .cargo-label.hidden {
@@ -426,24 +479,37 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
         .cargo-label-empty {
             color: var(--text-muted);
             background: rgba(74, 85, 104, 0.2);
+            animation: label-fade-in 0.5s ease-out;
         }
 
         .cargo-label-full {
             color: var(--accent-red);
             background: rgba(239, 68, 68, 0.15);
             font-weight: 700;
-            animation: label-pulse 1.5s ease-in-out infinite;
+            animation: label-pulse 1.5s ease-in-out infinite, label-fade-in 0.5s ease-out;
         }
 
         .cargo-label-warning {
             color: var(--accent-orange);
             background: rgba(255, 107, 53, 0.15);
             font-weight: 600;
+            animation: label-fade-in 0.3s ease-out;
         }
 
         @keyframes label-pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+
+        @keyframes label-fade-in {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         /* Inventory */
@@ -1038,7 +1104,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
         }
 
         /* ============================================
-           SOLAR MAP STYLES
+           SOLAR MAP STYLES - Issue #146
            ============================================ */
 
         .solar-map-container {
@@ -1052,6 +1118,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
         .solar-map-canvas {
             flex: 1;
             width: 100%;
+            height: 100%;
             min-height: 0;
             cursor: crosshair;
             display: block;

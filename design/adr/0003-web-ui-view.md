@@ -31,6 +31,7 @@ Left Side in a landscape / top in a portrait viewport
 - Visual indicators for player ship position and movement trajectory
 - Different visual styles for various planet types (mining worlds, agricultural, industrial, etc.)
 - Real-time updates of planet positions as turns progress
+- **No scrollbars**: The map view must fit within a single viewport without scrolling. The canvas should scale to fit the available space.
 
 **Information Panels 40% of screen:**
 Right Side in a landscape / bottom in a portrait viewport
@@ -39,6 +40,7 @@ Right Side in a landscape / bottom in a portrait viewport
 - Inventory panel showing current cargo with quantities and values
 - Planet market panel showing buy/sell prices for goods - should work for both current and distance planets (as a preview)
 - Interaction on each panel for the relevant action (e.g. buy/sell for market, buy/sell/upgrade equipment on ship)
+- **Scrolling allowed**: Information panels may scroll vertically if content exceeds available space. Panels should use `overflow-y: auto` to contain their content without affecting the main map view.
 
 **Configuration Modal:**
 Minimal config modal for starting a new game
